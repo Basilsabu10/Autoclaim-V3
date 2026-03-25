@@ -50,7 +50,7 @@ class Policy(Base):
     __tablename__ = "policies"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=True)
     plan_id = Column(Integer, ForeignKey("policy_plans.id"), index=True, nullable=False)
 
     # Vehicle details

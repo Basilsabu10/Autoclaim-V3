@@ -110,7 +110,7 @@ def create_policies(db, plan_map):
             print(f"  ✔ Policy for {p['reg']} already exists (id={existing.id})")
         else:
             policy = Policy(
-                user_id=0,  # 0 = unlinked, available for registration
+                user_id=None,  # null = unlinked, available for registration
                 plan_id=plan_map[p["plan"]],
                 vehicle_make=p["make"],
                 vehicle_model=p["model"],
@@ -129,12 +129,12 @@ def display_summary(db):
     """Print a summary of the seeded data."""
     total_plans = db.query(PolicyPlan).count()
     total_policies = db.query(Policy).count()
-    available = db.query(Policy).filter(Policy.user_id == 0).count()
+    available = db.query(Policy).filter(Policy.user_id == None).count()
 
     print(f"\n   Plans: {total_plans}  |  Policies: {total_policies}  |  Available for registration: {available}")
 
     print("\n   Available policies (users can register with these IDs):")
-    free = db.query(Policy).filter(Policy.user_id == 0).all()
+    free = db.query(Policy).filter(Policy.user_id == None).all()
     for p in free:
         print(f"     ID {p.id}  →  {p.vehicle_year} {p.vehicle_make} {p.vehicle_model}  ({p.vehicle_registration})")
 
