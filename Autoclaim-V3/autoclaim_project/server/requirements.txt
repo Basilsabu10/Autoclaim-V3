@@ -55,6 +55,7 @@ ImageHash==4.3.2
 ImageIO==2.37.2
 PyWavelets==1.9.0
 tifffile==2026.1.28
+exifread==3.0.0
 
 # ── Geolocation ───────────────────────────────────────────────
 geopy==2.4.1
