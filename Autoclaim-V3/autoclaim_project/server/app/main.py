@@ -103,7 +103,7 @@ def root():
 @app.get("/health")
 def health_check():
     """Health check endpoint with AI service status."""
-    from app.services.yolov8_damage_service import get_model_info
+    from app.services.yolo11_seg_service import get_model_info
     
     model_info = get_model_info()
     
