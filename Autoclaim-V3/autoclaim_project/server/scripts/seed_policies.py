@@ -80,14 +80,30 @@ def create_policy_plans(db):
     return created_plans
 
 
-def create_policies(db, plan_map):
-    """
-    Create unlinked policies (user_id=0) available for user registration.
+def get_or_create_unassigned_user(db):
+    """Create a dummy user to hold unlinked policies."""
+    from app.db.models import User
+    
+    email = "unassigned@autoclaim.com"
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        user = User(
+            email=email,
+            name="Available Policies",
+            hashed_password="not_a_real_hash_login_disabled",
+            role="user"
+        )
+        db.add(user)
+        db.flush()
+        print(f"  ✚ Created dummy unassigned user (id={user.id})")
+    
+    return user.id
 
-    When a user registers with one of these policy IDs, the /register endpoint
-    will link the policy to the user and auto-populate their vehicle details.
-    """
 
+def create_policies(db, plan_map, unassigned_user_id):
+    """
+    Create available policies linked to the dummy user.
+    """
     now = datetime.utcnow()
     one_year = timedelta(days=365)
 
@@ -110,7 +126,7 @@ def create_policies(db, plan_map):
             print(f"  ✔ Policy for {p['reg']} already exists (id={existing.id})")
         else:
             policy = Policy(
-                user_id=None,  # null = unlinked, available for registration
+                user_id=unassigned_user_id,
                 plan_id=plan_map[p["plan"]],
                 vehicle_make=p["make"],
                 vehicle_model=p["model"],
@@ -125,16 +141,16 @@ def create_policies(db, plan_map):
             print(f"  ✚ Created policy for {p['reg']} (id={policy.id})")
 
 
-def display_summary(db):
+def display_summary(db, unassigned_user_id):
     """Print a summary of the seeded data."""
     total_plans = db.query(PolicyPlan).count()
     total_policies = db.query(Policy).count()
-    available = db.query(Policy).filter(Policy.user_id == None).count()
+    available = db.query(Policy).filter(Policy.user_id == unassigned_user_id).count()
 
     print(f"\n   Plans: {total_plans}  |  Policies: {total_policies}  |  Available for registration: {available}")
 
     print("\n   Available policies (users can register with these IDs):")
-    free = db.query(Policy).filter(Policy.user_id == None).all()
+    free = db.query(Policy).filter(Policy.user_id == unassigned_user_id).all()
     for p in free:
         print(f"     ID {p.id}  →  {p.vehicle_year} {p.vehicle_make} {p.vehicle_model}  ({p.vehicle_registration})")
 
@@ -154,12 +170,15 @@ def main():
         plan_map = create_policy_plans(db)
         print(f"\n✅ Policy plans ready ({len(plan_map)} total)\n")
 
+        print("Creating proxy 'Unassigned' user for available policies...")
+        unassigned_user_id = get_or_create_unassigned_user(db)
+
         print("Creating policies (unlinked, available for registration)...")
-        create_policies(db, plan_map)
+        create_policies(db, plan_map, unassigned_user_id)
 
         db.commit()
 
-        display_summary(db)
+        display_summary(db, unassigned_user_id)
 
         print("\n══════════════════════════════════════════════════════")
         print("  ✅ Seed complete!")
