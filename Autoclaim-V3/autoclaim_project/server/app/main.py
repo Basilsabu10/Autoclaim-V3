@@ -48,65 +48,21 @@ UPLOADS_DIR = os.path.join(os.path.dirname(__file__), "..", "uploads")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 
-# ── One-time reset flag key ──────────────────────────────────────────────
-# Change this value to trigger a fresh wipe on the next deploy.
-DB_RESET_FLAG = "db_reset_v1"
-
-
 @app.on_event("startup")
 async def startup_event():
-    """Initialize AI services; one-time DB wipe + reseed; ensure admin exists."""
+    """Initialize AI services; ensure admin exists; seed plans & policies."""
     print("🚀 Starting AutoClaim server...")
 
     # Initialize AI services
     ai_status = ai_orchestrator.initialize_services()
     print(f"✅ AI Services: {ai_status}")
 
-    # ── DATABASE: ONE-TIME RESET ──────────────────────────────────────────────
-    # On the FIRST boot after deploy the flag doesn't exist ➜ wipe all data.
-    # On every subsequent restart the flag is found ➜ skip the wipe.
-    # To force a new wipe, change DB_RESET_FLAG above (e.g. "db_reset_v2").
-    # Compatible with both SQLite and PostgreSQL.
-    # ─────────────────────────────────────────────────────────────────────────
     try:
         from app.db.database import SessionLocal
         from app.core.security import get_password_hash
 
         db = SessionLocal()
         try:
-            # Check if we've already done this reset
-            flag = db.query(models.SystemSetting).filter(
-                models.SystemSetting.key == DB_RESET_FLAG
-            ).first()
-
-            if flag:
-                print(f"✅ Database already reset ({DB_RESET_FLAG}), skipping wipe")
-            else:
-                # ── FIRST BOOT: wipe everything ─────────────────────────────
-                print("🗑️  First boot — wiping all data …")
-
-                # Delete in FK-safe order
-                db.query(models.WalletTransaction).delete()
-                db.query(models.Wallet).delete()
-                db.query(models.ClaimDocument).delete()
-                db.query(models.ClaimNote).delete()
-                db.query(models.Notification).delete()
-                db.query(models.ForensicAnalysis).delete()
-                db.query(models.Claim).delete()
-                db.query(models.Policy).delete()
-                db.query(models.PolicyPlan).delete()
-                from app.price_api.models import PartPrice
-                db.query(PartPrice).delete()
-                db.query(models.SystemSetting).delete()
-                db.query(models.User).delete()
-                db.commit()
-                print("✅ All data deleted")
-
-                # Write the flag so we never wipe again
-                db.add(models.SystemSetting(key=DB_RESET_FLAG, value="done"))
-                db.commit()
-                print(f"✅ Reset flag '{DB_RESET_FLAG}' saved")
-
             # ── ENSURE ADMIN USER (every restart) ───────────────────────────
             admin = db.query(models.User).filter(
                 models.User.email == "admin@autoclaim.com"
