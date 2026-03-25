@@ -43,8 +43,9 @@ Thumbs.db
 logs/
 
 # Models (YOLO weights can be large)
-*.pt
-*.pth
+# Note: best.pt and damage_seg_best.pt are intentionally tracked
+# *.pt
+# *.pth
 models/weights/
 
 # Testing
