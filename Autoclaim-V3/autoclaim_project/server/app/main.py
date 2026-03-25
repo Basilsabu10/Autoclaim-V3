@@ -97,10 +97,11 @@ async def startup_event():
         from app.db.database import SessionLocal
         db = SessionLocal()
         try:
-            from scripts.seed_policies import create_policy_plans, create_policies
+            from scripts.seed_policies import create_policy_plans, create_policies, get_or_create_unassigned_user
             print("🌱 Seeding policy data...")
             plan_map = create_policy_plans(db)
-            create_policies(db, plan_map)
+            unassigned_id = get_or_create_unassigned_user(db)
+            create_policies(db, plan_map, unassigned_id)
             db.commit()
             print("✅ Policy data seeded successfully")
         finally:
