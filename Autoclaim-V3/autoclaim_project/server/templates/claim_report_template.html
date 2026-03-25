@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>AutoClaim — Claim #{{ claim.id }} Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  @page {
+    size: A4;
+    margin: 18mm 16mm 20mm 16mm;
+    @top-left   { content: "AutoClaim Verification Report"; font-size:8pt; color:#94a3b8; font-family:Inter,sans-serif; }
+    @top-right  { content: "Claim #{{ claim.id }}"; font-size:8pt; color:#94a3b8; font-family:Inter,sans-serif; }
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font-size:8pt; color:#94a3b8; font-family:Inter,sans-serif; }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', Arial, sans-serif;
+    font-size: 10pt;
+    color: #1e2e3f;
+    line-height: 1.5;
+    background: #fff;
+  }
+
+  /* ─── HEADER ─────────────────────────────── */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 12px;
+    border-bottom: 3px solid #1e2e3f;
+    margin-bottom: 18px;
+  }
+  .brand { font-size: 22pt; font-weight: 800; color: #1e2e3f; letter-spacing: -0.5px; }
+  .brand span { color: #7392B7; }
+  .report-meta { text-align: right; font-size: 9pt; color: #64748b; line-height: 1.6; }
+  .report-meta strong { color: #1e2e3f; font-size: 10pt; }
+
+  /* ─── DECISION BANNER ───────────────────── */
+  .decision-banner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 2px solid;
+  }
+  .decision-badge {
+    font-size: 18pt;
+    font-weight: 800;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+  .decision-reasoning { font-size: 9pt; color: #475569; flex: 1; }
+
+  /* ─── SECTION HEADINGS ──────────────────── */
+  h2 {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #1e2e3f;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1.5px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  h3 { font-size: 10pt; font-weight: 600; margin-bottom: 8px; color: #334155; }
+
+  /* ─── TWO-COLUMN GRID ───────────────────── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .card.full { grid-column: 1 / -1; }
+
+  /* ─── KEY–VALUE TABLE ───────────────────── */
+  .kv-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  .kv-table tr:nth-child(even) td { background: #f1f5f9; }
+  .kv-table td { padding: 5px 8px; vertical-align: top; }
+  .kv-table td:first-child { color: #64748b; font-weight: 600; width: 42%; white-space: nowrap; }
+
+  /* ─── RULES TABLE ───────────────────────── */
+  .rules-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin-top:8px; }
+  .rules-table thead tr { background: #1e2e3f; color: #fff; }
+  .rules-table th { padding: 7px 10px; text-align: left; font-weight: 600; }
+  .rules-table td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+  .rules-table tr:nth-child(even) td { background: #fef2f2; }
+  .rules-table tr:nth-child(odd)  td { background: #fff; }
+
+  .sev-CRITICAL { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
+  .sev-HIGH     { background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; }
+  .sev-MEDIUM   { background:#fefce8; color:#92400e; border:1px solid #fde68a; }
+  .sev-LOW      { background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd; }
+  .sev-badge {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 999px; font-size: 8pt; font-weight: 700;
+  }
+
+  /* ─── PASSED RULES SUMMARY ──────────────── */
+  .pass-box {
+    background: #f0fdf4; border: 1px solid #bbf7d0;
+    border-radius: 8px; padding: 10px 14px;
+    color: #16a34a; font-size: 9.5pt;
+    margin-top: 10px;
+  }
+
+  /* ─── IMAGES ────────────────────────────── */
+  .image-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .image-cell { text-align: center; }
+  .image-cell img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+  }
+  .image-label { font-size: 7.5pt; color: #94a3b8; margin-top: 3px; word-break: break-all; }
+  .img-placeholder {
+    width: 100%; height: 120px;
+    background: #f1f5f9; border-radius: 6px;
+    border: 1px dashed #cbd5e1; display:flex;
+    align-items:center; justify-content:center;
+    color:#94a3b8; font-size:9pt;
+  }
+
+  /* ─── COST TABLE ────────────────────────── */
+  .cost-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin-top: 8px; }
+  .cost-table thead tr { background: #1e2e3f; color: #fff; }
+  .cost-table th { padding: 7px 10px; text-align: left; }
+  .cost-table td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; }
+  .cost-table tr:nth-child(even) td { background: #f8fafc; }
+  .cost-table tfoot td { background: #eff6ff; font-weight: 700; color: #1d4ed8; border-top: 2px solid #3b82f6; }
+  .replace-badge { background:#fef2f2; color:#991b1b; padding:2px 7px; border-radius:999px; font-size:7.5pt; font-weight:600; }
+  .repair-badge  { background:#f0fdf4; color:#15803d; padding:2px 7px; border-radius:999px; font-size:7.5pt; font-weight:600; }
+
+  /* ─── PAGE BREAK ────────────────────────── */
+  .page-break { page-break-before: always; }
+
+  /* ─── FOOTER NOTE ───────────────────────── */
+  .footer-note {
+    margin-top: 16px; padding: 10px 14px;
+    background: #f8fafc; border: 1px solid #e2e8f0;
+    border-radius: 6px; font-size: 8pt; color: #64748b;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════ PAGE 1: SUMMARY & DETAILS ═══════════════════════════════════ -->
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="brand">Auto<span>Claim</span></div>
+    <div style="font-size:9pt; color:#64748b; margin-top:2px;">Automated Vehicle Claim Verification Report</div>
+  </div>
+  <div class="report-meta">
+    <strong>Claim #{{ claim.id }}</strong><br>
+    Generated: {{ report_date }}<br>
+    Submitted: {{ claim.created_at }}<br>
+    Accident: {{ claim.accident_date }}
+  </div>
+</div>
+
+<!-- DECISION BANNER -->
+{% set dc = decision_color %}
+<div class="decision-banner" style="background:{{ dc }}18; border-color:{{ dc }};">
+  <div>
+    <div class="decision-badge" style="color:{{ dc }};">{{ decision }}</div>
+    <div style="font-size:8pt; color:#64748b; margin-top:3px;">AI Recommendation</div>
+  </div>
+  <div class="decision-reasoning">
+    {% if forensic %}
+      <strong>Fraud Probability:</strong> {{ forensic.fraud_probability }}&nbsp;&nbsp;
+      <strong>Confidence Score:</strong> {{ forensic.confidence_score }}/100<br>
+      {% if forensic.ai_reasoning %}
+        {{ forensic.ai_reasoning[:280] }}{% if forensic.ai_reasoning|length > 280 %}…{% endif %}
+      {% endif %}
+    {% else %}
+      Analysis data not available.
+    {% endif %}
+  </div>
+  <div style="text-align:right; white-space:nowrap;">
+    <div style="font-size:8pt; color:#64748b;">Failed checks</div>
+    <div style="font-size:20pt; font-weight:800; color:{{ dc }};">{{ failed_count }}</div>
+    <div style="font-size:8pt; color:#16a34a;">✓ {{ passed_count }} passed</div>
+  </div>
+</div>
+
+<!-- SECTION A: KEY DETAILS -->
+<div class="grid-2">
+
+  <!-- Claim Info -->
+  <div class="card">
+    <h2>📋 Claim Information</h2>
+    <table class="kv-table">
+      <tr><td>Claim ID</td><td>#{{ claim.id }}</td></tr>
+      <tr><td>Status</td><td><strong style="color:{{ decision_color }}">{{ claim.status }}</strong></td></tr>
+      <tr><td>Accident Date</td><td>{{ claim.accident_date }}</td></tr>
+      <tr><td>Decision Date</td><td>{{ claim.decision_date }}</td></tr>
+      <tr><td>Vehicle Plate</td><td><strong>{{ claim.vehicle_plate }}</strong></td></tr>
+      <tr><td>Estimated Cost</td><td><strong style="color:#16a34a">{{ claim.estimated_cost }}</strong></td></tr>
+    </table>
+  </div>
+
+  <!-- User & Policy Info -->
+  <div class="card">
+    <h2>👤 User &amp; Policy</h2>
+    <table class="kv-table">
+      <tr><td>User Name</td><td>{{ user.name }}</td></tr>
+      <tr><td>Email</td><td>{{ user.email }}</td></tr>
+      <tr><td>User ID</td><td>#{{ user.id }}</td></tr>
+      {% if policy %}
+      <tr><td style="padding-top:8px; color:#94a3b8; font-size:8pt;" colspan="2">— Policy —</td></tr>
+      <tr><td>Policy ID</td><td>#{{ policy.id }}</td></tr>
+      <tr><td>Status</td><td>{{ policy.status }}</td></tr>
+      <tr><td>Vehicle</td><td>{{ policy.vehicle_year }} {{ policy.vehicle_make }} {{ policy.vehicle_model }}</td></tr>
+      <tr><td>Registration</td><td><strong>{{ policy.vehicle_reg }}</strong></td></tr>
+      <tr><td>Coverage</td><td>{{ policy.start_date }} – {{ policy.end_date }}</td></tr>
+      {% else %}
+      <tr><td colspan="2" style="color:#dc2626; font-size:9pt;">⚠ No policy linked to this claim</td></tr>
+      {% endif %}
+    </table>
+  </div>
+</div>
+
+<!-- SECTION B: PIPELINE OUTPUT -->
+{% if forensic %}
+<div class="grid-2">
+  <div class="card">
+    <h2>🔍 Image &amp; OCR Analysis</h2>
+    <table class="kv-table">
+      <tr><td>Photo Timestamp</td><td>{{ forensic.exif_timestamp }}</td></tr>
+      <tr><td>Camera</td><td>{{ forensic.exif_camera }}</td></tr>
+      <tr><td>Forgery Detected</td><td>{% if forensic.forgery_detected == 'YES' %}<span style="color:#dc2626">⚠ YES</span>{% else %}✓ NO{% endif %}</td></tr>
+      <tr><td>Authenticity Score</td><td>{{ forensic.authenticity_score }}/100</td></tr>
+      <tr><td>OCR Plate</td><td><strong>{{ forensic.ocr_plate }}</strong></td></tr>
+      <tr><td>OCR Confidence</td><td>{{ forensic.ocr_confidence }}</td></tr>
+      <tr><td>Plate Match</td><td>
+        {% if forensic.plate_match == 'MATCH' %}<span style="color:#16a34a">✓ MATCH</span>
+        {% elif forensic.plate_match == 'MISMATCH' %}<span style="color:#dc2626">✗ MISMATCH</span>
+        {% else %}{{ forensic.plate_match }}{% endif %}
+      </td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>🎯 Damage &amp; Vehicle Detection</h2>
+    <table class="kv-table">
+      <tr><td>YOLO Damage</td><td>{% if forensic.yolo_damage == 'YES' %}<span style="color:#16a34a">✓ YES</span>{% else %}<span style="color:#dc2626">✗ NO</span>{% endif %}</td></tr>
+      <tr><td>YOLO Severity</td><td>{{ forensic.yolo_severity }}</td></tr>
+      <tr><td>AI Damage Type</td><td>{{ forensic.ai_damage_type }}</td></tr>
+      <tr><td>AI Severity</td><td>{{ forensic.ai_severity }}</td></tr>
+      <tr><td>Pre-existing</td><td>{% if forensic.pre_existing == 'YES' %}<span style="color:#d97706">⚠ YES</span>{% else %}✓ NO{% endif %}</td></tr>
+      {% if forensic.ai_damaged_panels %}
+      <tr><td>Damaged Panels</td><td>{{ forensic.ai_damaged_panels | join(', ') }}</td></tr>
+      {% endif %}
+    </table>
+    {% if forensic.yolo_summary %}
+    <p style="font-size:8.5pt; color:#475569; margin-top:8px; line-height:1.4;">{{ forensic.yolo_summary[:200] }}</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- SECTION C: VERIFICATION RULES -->
+<div class="card full" style="margin-bottom:14px;">
+  <h2>⚖️ Verification Rules</h2>
+
+  {% if failed_rules %}
+  <table class="rules-table">
+    <thead><tr><th>Rule</th><th>Severity</th><th>Reason</th></tr></thead>
+    <tbody>
+    {% for r in failed_rules %}
+    <tr>
+      <td><strong>❌ {{ r.flag }}</strong></td>
+      <td><span class="sev-badge sev-{{ r.severity }}">{{ r.severity }}</span></td>
+      <td>{{ r.reason }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if passed_count > 0 %}
+  <div class="pass-box">
+    ✅ <strong>{{ passed_count }} verification check{{ 's' if passed_count != 1 else '' }} passed</strong> — including image quality, forgery detection, duplicate guard, and contextual consistency.
+  </div>
+  {% endif %}
+
+  {% if not failed_rules %}
+  <div class="pass-box" style="font-size:10.5pt;">
+    ✅ <strong>All verification checks passed.</strong> This claim is eligible for processing.
+  </div>
+  {% endif %}
+</div>
+
+<!-- Claim Description -->
+{% if claim.description and claim.description != '—' %}
+<div class="card full" style="margin-bottom:14px;">
+  <h2>📝 Claim Description</h2>
+  <p style="font-size:9.5pt; color:#334155; line-height:1.6;">{{ claim.description }}</p>
+</div>
+{% endif %}
+
+
+<!-- ════════ PAGE 2: IMAGES ═══════════════════════════════════════════════ -->
+<div class="page-break"></div>
+
+<div class="header">
+  <div><div class="brand">Auto<span>Claim</span></div></div>
+  <div class="report-meta"><strong>Claim #{{ claim.id }}</strong> — Image Evidence</div>
+</div>
+
+<h2>📷 Submitted Damage Images</h2>
+
+{% if images %}
+<div class="image-grid">
+  {% for img in images %}
+  <div class="image-cell">
+    {% if img.uri %}
+    <img src="{{ img.uri }}" alt="Damage image {{ loop.index }}"/>
+    {% else %}
+    <div class="img-placeholder">Image unavailable</div>
+    {% endif %}
+    <div class="image-label">{{ img.label }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="img-placeholder" style="height:80px; margin-bottom:10px;">No damage images available</div>
+{% endif %}
+
+{% if front_image %}
+<div style="margin-top:16px;">
+  <h3>Front View Image</h3>
+  <div style="text-align:center;">
+    <img src="{{ front_image }}" alt="Front view"
+         style="max-width:55%; max-height:200px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0;"/>
+  </div>
+</div>
+{% endif %}
+
+<!-- ════════ PAGE 3: COST BREAKDOWN ══════════════════════════════════════ -->
+<div class="page-break"></div>
+
+<div class="header">
+  <div><div class="brand">Auto<span>Claim</span></div></div>
+  <div class="report-meta"><strong>Claim #{{ claim.id }}</strong> — Damage &amp; Cost</div>
+</div>
+
+<h2>💰 Repair Cost Breakdown</h2>
+
+{% if repair_vehicle %}
+<p style="font-size:9.5pt; color:#64748b; margin-bottom:10px;">Vehicle: <strong>{{ repair_vehicle }}</strong></p>
+{% endif %}
+
+{% if cost_parts %}
+<table class="cost-table">
+  <thead>
+    <tr>
+      <th>Part</th>
+      <th>Damage Type</th>
+      <th>Action</th>
+      <th style="text-align:right;">Repair (₹)</th>
+      <th style="text-align:right;">Replace (₹)</th>
+      <th style="text-align:right;">Recommended (₹)</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for p in cost_parts %}
+  <tr>
+    <td><strong>{{ p.get('part_key','—').replace('_',' ').title() }}</strong></td>
+    <td style="color:#64748b; text-transform:capitalize;">{{ p.get('damage_type','—') }}</td>
+    <td>
+      {% if p.get('action') == 'replace' %}
+        <span class="replace-badge">🔴 Replace</span>
+      {% elif p.get('action') == 'repair' %}
+        <span class="repair-badge">🔧 Repair</span>
+      {% else %}
+        {{ p.get('action','—') }}
+      {% endif %}
+    </td>
+    <td style="text-align:right; color:#64748b;">
+      {% if p.get('repair_cost',0) > 0 %}₹{{ '{:,}'.format(p.repair_cost|int) }}{% else %}—{% endif %}
+    </td>
+    <td style="text-align:right; color:#64748b;">₹{{ '{:,}'.format(p.get('replacement_cost',0)|int) }}</td>
+    <td style="text-align:right; font-weight:700; color:#16a34a;">₹{{ '{:,}'.format(p.get('recommended_cost',0)|int) }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="5">Total ({{ cost_parts|length }} part{{ 's' if cost_parts|length != 1 else '' }})</td>
+      <td style="text-align:right; color:#16a34a;">{{ cost_total }}</td>
+    </tr>
+  </tfoot>
+</table>
+{% else %}
+<div style="padding:14px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0; color:#94a3b8; font-style:italic; font-size:9.5pt;">
+  No repair cost breakdown available for this claim.
+</div>
+{% endif %}
+
+<div class="footer-note" style="margin-top:20px;">
+  ⚠️ This report is auto-generated by the AutoClaim AI verification pipeline. All decisions are preliminary and subject to human agent review. For disputes or appeals, please contact the assigned agent.
+</div>
+
+</body>
+</html>

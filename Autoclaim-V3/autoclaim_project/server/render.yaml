@@ -1,0 +1,39 @@
+# ============================================================
+# AutoClaim — Render.com service definition
+# NOTE: Primary deployment is now HuggingFace Space (see Dockerfile in repo root).
+# This file remains for reference or fallback to Render (yolo_only mode only).
+# ============================================================
+services:
+  # ─── Main AutoClaim Backend ───────────────────────────────────
+  - type: web
+    name: autoclaim-api
+    runtime: python
+    rootDir: Autoclaim-V3/autoclaim_project/server
+    # Use slim requirements (no torch/YOLO/EasyOCR) for free tier
+    buildCommand: pip install -r requirements-render.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: AI_MODE
+        value: yolo_only
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: PRICE_API_URL
+        sync: false
+
+  # ─── Price API Sidecar ────────────────────────────────────────
+  - type: web
+    name: autoclaim-price-api
+    runtime: python
+    rootDir: Price_api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /

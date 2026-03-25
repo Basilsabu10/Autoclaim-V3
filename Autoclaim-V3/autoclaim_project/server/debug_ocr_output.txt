@@ -1,0 +1,48 @@
+﻿[OCR] Info: google-generativeai not installed ù Gemini fallback disabled
+[OCR] Initializing EasyOCR (may download model on first run)...
+[OCR] EasyOCR ready
+Image shape: (5712, 4284, 3)
+
+Regions detected: ['contour_0', 'bottom_40', 'bottom_50', 'bottom_30', 'bottom_center', 'full']
+
+Total raw detections: 44
+
+Top raw texts (sorted by confidence):
+  raw='MXLU'                    conf=0.873  stripped='MXLU'                best_parse='---'
+  raw='07117471'                conf=0.768  stripped='07117471'            best_parse='---'
+  raw='IXLU'                    conf=0.684  stripped='IXLU'                best_parse='---'
+  raw='24'                      conf=0.676  stripped='24'                  best_parse='---'
+  raw='ILU'                     conf=0.536  stripped='ILU'                 best_parse='---'
+  raw='CV'                      conf=0.529  stripped='CV'                  best_parse='---'
+  raw='IXLO7475'                conf=0.501  stripped='IXLO7475'            best_parse='---'
+  raw='FIL071475'               conf=0.436  stripped='FIL071475'           best_parse='---'
+  raw='IKLU'                    conf=0.433  stripped='IKLU'                best_parse='---'
+  raw='00'                      conf=0.414  stripped='00'                  best_parse='---'
+  raw='IXL070747'               conf=0.394  stripped='IXL070747'           best_parse='---'
+  raw='76'                      conf=0.385  stripped='76'                  best_parse='---'
+  raw='TKLU'                    conf=0.378  stripped='TKLU'                best_parse='---'
+  raw='IXL070475'               conf=0.333  stripped='IXL070475'           best_parse='---'
+  raw='MXL07IW47'               conf=0.303  stripped='MXL07IW47'           best_parse='---'
+  raw='MXL07I1775I'             conf=0.298  stripped='MXL07I1775I'         best_parse='---'
+  raw='WWW'                     conf=0.297  stripped='WWW'                 best_parse='---'
+  raw='HIL071425'               conf=0.262  stripped='HIL071425'           best_parse='---'
+  raw='IKLO70475'               conf=0.230  stripped='IKLO70475'           best_parse='KL07O475'
+  raw='IXL070675'               conf=0.220  stripped='IXL070675'           best_parse='---'
+  raw='IHLE'                    conf=0.214  stripped='IHLE'                best_parse='---'
+  raw='IKL071V14754'            conf=0.186  stripped='IKL071V14754'        best_parse='KL07IV1475'
+  raw='XL070WS7'                conf=0.182  stripped='XL070WS7'            best_parse='---'
+  raw='RKL07117475'             conf=0.180  stripped='RKL07117475'         best_parse='---'
+  raw='IKLO74754'               conf=0.172  stripped='IKLO74754'           best_parse='KL07A754'
+  raw='DT'                      conf=0.165  stripped='DT'                  best_parse='---'
+  raw='LD7VA'                   conf=0.154  stripped='LD7VA'               best_parse='---'
+  raw='FXL07017675'             conf=0.147  stripped='FXL07017675'         best_parse='---'
+  raw='FXLOZIV4751'             conf=0.125  stripped='FXLOZIV4751'         best_parse='---'
+  raw='222'                     conf=0.111  stripped='222'                 best_parse='---'
+  raw='MKL071W475'              conf=0.104  stripped='MKL071W475'          best_parse='---'
+  raw='MKL071174754'            conf=0.084  stripped='MKL071174754'        best_parse='---'
+  raw='ILD7IVE75'               conf=0.073  stripped='ILD7IVE75'           best_parse='KL07IV375'
+  raw='IKL071V475A'             conf=0.072  stripped='IKL071V475A'         best_parse='KL07IV4754'
+  raw='FKL07V4ZSA'              conf=0.070  stripped='FKL07V4ZSA'          best_parse='---'
+  raw='MU4'                     conf=0.064  stripped='MU4'                 best_parse='---'
+  raw='IAL0J0V4Z'               conf=0.057  stripped='IAL0J0V4Z'           best_parse='---'
+  raw='3074'                    conf=0.039  stripped='3074'                best_parse='---'

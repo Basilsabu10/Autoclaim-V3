@@ -1,0 +1,11 @@
+﻿[OCR] Info: google-generativeai not installed ù Gemini fallback disabled
+[OCR] Initializing EasyOCR (may download model on first run)...
+[OCR] EasyOCR ready
+[FAIL] expected='KL-07-CU-7475'       got='KL-07-I-1775'          conf=0.98
+[FAIL] expected='KL-07-CU-7475'       got='KL-07-CU-7'            conf=0.98
+[FAIL] expected='KL-07-CU-7475'       got='KL-02-CU-2175'         conf=0.98
+[FAIL] expected='KL-07-CU-7475'       got='None'                  conf=None
+[FAIL] expected='KL-07-CU-7475'       got='None'                  conf=None
+
+=======================================================
+Results: 0 passed, 5 failed out of 5 tests

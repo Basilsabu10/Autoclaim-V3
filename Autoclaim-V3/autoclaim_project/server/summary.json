@@ -1,0 +1,176 @@
+{
+    "root_group": {
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "login successful (200)": {
+                    "passes": 66,
+                    "fails": 134,
+                    "name": "login successful (200)",
+                    "path": "::login successful (200)",
+                    "id": "03987064168da34feea84a6496f9aac5"
+                },
+                "view claims (200)": {
+                    "name": "view claims (200)",
+                    "path": "::view claims (200)",
+                    "id": "5ff7a518b1e9ff44f925a4749e450606",
+                    "passes": 0,
+                    "fails": 80
+                },
+                "agent login successful (200)": {
+                    "name": "agent login successful (200)",
+                    "path": "::agent login successful (200)",
+                    "id": "9da74d61983856dd1e852385eaca4b55",
+                    "passes": 0,
+                    "fails": 31
+                },
+                "view profile (200)": {
+                    "name": "view profile (200)",
+                    "path": "::view profile (200)",
+                    "id": "a439b7182cc9d8be2d4164621d25e708",
+                    "passes": 6,
+                    "fails": 11
+                },
+                "view notifications (200)": {
+                    "name": "view notifications (200)",
+                    "path": "::view notifications (200)",
+                    "id": "f0ff53d1c529af502b781886e3523d1f",
+                    "passes": 16,
+                    "fails": 40
+                },
+                "agent view claims (200)": {
+                    "name": "agent view claims (200)",
+                    "path": "::agent view claims (200)",
+                    "id": "f995af70f4779c407012e5d9141c1b63",
+                    "passes": 0,
+                    "fails": 22
+                },
+                "agent view notifications (200)": {
+                    "name": "agent view notifications (200)",
+                    "path": "::agent view notifications (200)",
+                    "id": "4f0bf23d86cf1d16a67df43ec9515696",
+                    "passes": 0,
+                    "fails": 9
+                },
+                "view wallet (200)": {
+                    "fails": 28,
+                    "name": "view wallet (200)",
+                    "path": "::view wallet (200)",
+                    "id": "bed332280798240b01e6f20469ba2a05",
+                    "passes": 19
+                }
+            },
+        "name": "",
+        "path": ""
+    },
+    "metrics": {
+        "iteration_duration": {
+            "avg": 4522.227938095241,
+            "min": 2289.1572,
+            "med": 4267.2331,
+            "max": 9527.2459,
+            "p(90)": 6044.9978,
+            "p(95)": 7365.28495
+        },
+        "http_req_sending": {
+            "avg": 0.008385930735930736,
+            "min": 0,
+            "med": 0,
+            "max": 2.0068,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "http_req_waiting": {
+            "med": 14.2052,
+            "max": 132.1508,
+            "p(90)": 32.22515,
+            "p(95)": 40.56178999999999,
+            "avg": 14.880996969696996,
+            "min": 0
+        },
+        "http_req_failed": {
+            "passes": 355,
+            "fails": 107,
+            "value": 0.7683982683982684
+        },
+        "http_reqs": {
+            "count": 462,
+            "rate": 8.770671759057906
+        },
+        "iterations": {
+            "count": 231,
+            "rate": 4.385335879528953
+        },
+        "http_req_connecting": {
+            "med": 0,
+            "max": 30.3231,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.1839272727272727,
+            "min": 0
+        },
+        "data_received": {
+            "count": 95909,
+            "rate": 1820.749692076807
+        },
+        "http_req_tls_handshaking": {
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0
+        },
+        "http_req_receiving": {
+            "med": 0,
+            "max": 6.2432,
+            "p(90)": 0.9490000000000012,
+            "p(95)": 1.666419999999999,
+            "avg": 0.283474025974026,
+            "min": 0
+        },
+        "vus_max": {
+            "value": 25,
+            "min": 25,
+            "max": 25
+        },
+        "data_sent": {
+            "count": 80017,
+            "rate": 1519.0537708756203
+        },
+        "checks": {
+            "passes": 107,
+            "fails": 355,
+            "value": 0.23160173160173161
+        },
+        "http_req_duration": {
+            "avg": 15.172856926406947,
+            "min": 0,
+            "med": 14.42735,
+            "max": 132.1508,
+            "p(90)": 32.728609999999996,
+            "p(95)": 40.56178999999999
+        },
+        "http_req_duration{expected_response:true}": {
+            "med": 19.5191,
+            "max": 75.5527,
+            "p(90)": 34.13884,
+            "p(95)": 41.597469999999994,
+            "avg": 18.7539429906542,
+            "min": 0.7204
+        },
+        "vus": {
+            "value": 1,
+            "min": 1,
+            "max": 25
+        },
+        "http_req_blocked": {
+            "avg": 0.209984632034632,
+            "min": 0,
+            "med": 0,
+            "max": 42.3616,
+            "p(90)": 0,
+            "p(95)": 0
+        }
+    }
+}

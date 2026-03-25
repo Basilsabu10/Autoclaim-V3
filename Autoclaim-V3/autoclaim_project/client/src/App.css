@@ -1,0 +1,372 @@
+.app-root {
+  background: radial-gradient(circle at top left, #C5D5EA 0%, #B3C5D7 40%, #759EB8 100%);
+  color: #012b5b;
+}
+
+.brand-logo {
+  width: 34px;
+  height: 34px;
+  background: #D8E1E9;
+}
+
+.nav-link {
+  color: #35516b !important;
+}
+
+.nav-link.active,
+.nav-link:hover {
+  color: #1e2e3f !important;
+}
+
+.btn-teal {
+  background-color: #7392B7;
+  border-color: #7392B7;
+  color: #ffffff;
+}
+
+.btn-teal:hover {
+  background-color: #759EB8;
+  border-color: #759EB8;
+}
+
+.badge-pill {
+  background: #D8E1E9;
+  border-radius: 999px;
+  border: 1px solid #B3C5D7;
+  color: #35516b;
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 4vw, 3.6rem);
+  font-weight: 700;
+  color: #1e2e3f;
+}
+
+.hero-title-highlight {
+  color: #7392B7;
+}
+
+.hero-subtitle {
+  max-width: 640px;
+  color: #35516b;
+  font-size: 1.05rem;
+}
+
+.btn-primary {
+  background-color: #759EB8;
+  border-color: #759EB8;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: #7392B7;
+  border-color: #7392B7;
+}
+
+.btn-outline-light {
+  border-color: #D8E1E9;
+  color: #1e2e3f;
+  font-weight: 600;
+}
+
+.btn-outline-light:hover {
+  background-color: #D8E1E9;
+  color: #1e2e3f;
+}
+
+.hero-badges {
+  color: #35516b;
+}
+
+.hero-pill {
+  border: 1px solid #B3C5D7;
+  background: #D8E1E9;
+}
+
+.hero-pill-dot {
+  background: #7392B7;
+}
+
+
+.header-nav {
+  background-color: #D8E1E9;
+  border-bottom: 1px solid #B3C5D7;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+}
+
+
+.header-nav .navbar-brand span {
+  color: #1e2e3f;
+}
+
+.header-nav .nav-link {
+  color: #35516b !important;
+}
+
+.header-nav .nav-link.active,
+.header-nav .nav-link:hover {
+  color: #1e2e3f !important;
+}
+
+
+.header-nav .btn-teal {
+  background-color: #7392B7;
+  border-color: #7392B7;
+  color: #ffffff;
+}
+
+.how-it-works-section {
+  background-color: #D8E1E9;
+  color: #000000;
+  /* default text black */
+}
+
+.hiw-title {
+  font-weight: 700;
+  font-size: clamp(2rem, 3vw, 2.5rem);
+  color: #000000;
+  /* title black */
+}
+
+.hiw-subtitle {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+  color: #555555;
+  /* gray subtitle */
+  font-size: 1rem;
+}
+
+/* Step card */
+
+.hiw-step {
+  background-color: #C5D5EA;
+  border-radius: 16px;
+  padding: 2.5rem 2rem 2rem;
+  box-shadow: 0 14px 30px rgba(115, 146, 183, 0.25);
+  position: relative;
+}
+
+/* Number circle keeps palette */
+
+.hiw-step-number {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background-color: #7392B7;
+  color: #ffffff;
+  /* white for contrast */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  margin: 0 auto 1.25rem;
+}
+
+/* Icon card */
+
+.hiw-step-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  background-color: #D8E1E9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.2rem;
+  box-shadow: 0 10px 24px rgba(117, 158, 184, 0.35);
+}
+
+.hiw-icon-symbol {
+  font-size: 1.6rem;
+  color: #7392B7;
+}
+
+/* Text inside cards */
+
+.hiw-step-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #000000;
+  /* black headings */
+}
+
+.hiw-step-text {
+  color: #555555;
+  /* gray body text */
+  font-size: 0.96rem;
+  margin-bottom: 0;
+}
+
+.ready-section {
+  background-color: #D8E1E9;
+  /* light page background */
+}
+
+.ready-card {
+  background: radial-gradient(circle at top left,
+      #759EB8 0%,
+      #7392B7 40%,
+      #C5D5EA 100%);
+  /* palette gradient */
+  border-radius: 24px;
+  padding: 3rem 2rem;
+  color: #ffffff;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 18px 40px rgba(117, 158, 184, 0.55);
+  /* from #759EB8 */
+}
+
+.ready-title {
+  font-weight: 700;
+  font-size: clamp(1.9rem, 3vw, 2.3rem);
+  color: #ffffff;
+}
+
+.ready-text {
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+  color: #D8E1E9;
+  /* light text from palette */
+}
+
+/* Primary button inside CTA (use one of the blues as solid) */
+.ready-card .btn-primary {
+  background-color: #7392B7;
+  border-color: #7392B7;
+  color: #D8E1E9;
+  font-weight: 600;
+}
+
+.ready-card .btn-primary:hover {
+  background-color: #759EB8;
+  border-color: #759EB8;
+}
+
+/* Outline-style button using palette colors only */
+.ready-card .btn-outline-light.ready-agent-btn {
+  border-color: #C5D5EA;
+  color: #000000;
+  font-weight: 600;
+  background-color: transparent;
+}
+
+.ready-card .btn-outline-light.ready-agent-btn:hover {
+  background-color: #C5D5EA;
+  color: #000000;
+}
+
+@media (max-width: 576px) {
+  .ready-card {
+    padding: 2.3rem 1.5rem;
+  }
+}
+
+/* Submit Claim page layout */
+.submit-page {
+  background-color: #D8E1E9;
+}
+
+/* Header */
+.submit-title {
+  color: #000000;
+  font-weight: 700;
+}
+
+.submit-subtitle {
+  color: #555555;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Progress */
+.submit-progress .progress {
+  height: 8px;
+  border-radius: 999px;
+  background-color: #C5D5EA;
+}
+
+.submit-progress .progress-bar {
+  background-color: #7392B7;
+}
+
+.submit-step-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #759EB8;
+  text-decoration: none;
+}
+
+.submit-step-label.active {
+  color: #7392B7;
+}
+
+.submit-step-number {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #C5D5EA;
+  color: #000000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Left info cards */
+.submit-info-card {
+  background-color: #C5D5EA;
+  border-radius: 16px;
+  padding: 1.2rem 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 10px 24px rgba(117, 158, 184, 0.35);
+}
+
+.submit-info-card h5 {
+  color: #7392B7;
+  margin-bottom: 0.3rem;
+}
+
+.submit-info-card p {
+  color: #555555;
+  margin-bottom: 0;
+  font-size: 0.9rem;
+}
+
+/* Right form card */
+.submit-form-card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 18px 40px rgba(115, 146, 183, 0.45);
+}
+
+/* Thumbnails */
+.submit-thumb img {
+  border-radius: 10px;
+}
+
+/* Review blocks */
+.submit-review-block {
+  background-color: #C5D5EA;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+}
+
+.submit-review-block h5 {
+  font-size: 0.95rem;
+  margin-bottom: 0.35rem;
+}
+
+.submit-review-block p {
+  margin-bottom: 0;
+}

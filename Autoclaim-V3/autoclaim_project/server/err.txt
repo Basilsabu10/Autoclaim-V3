@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "C:\Autoclaim-main\Autoclaim-V3\autoclaim_project\server\debug.py", line 5, in <module>
+    import app.main
+  File "C:\Autoclaim-main\Autoclaim-V3\autoclaim_project\server\app\main.py", line 16, in <module>
+    from app.services import ai_orchestrator
+  File "C:\Autoclaim-main\Autoclaim-V3\autoclaim_project\server\app\services\ai_orchestrator.py", line 18, in <module>
+    from app.services.exif_service import extract_metadata
+  File "C:\Autoclaim-main\Autoclaim-V3\autoclaim_project\server\app\services\exif_service.py", line 11, in <module>
+    from PIL import Image
+  File "C:\Autoclaim-main\Autoclaim-V3\autoclaim_project\server\venv\Lib\site-packages\PIL\Image.py", line 95, in <module>
+    from . import _imaging as core
+ImportError: cannot import name '_imaging' from 'PIL' (C:\Autoclaim-main\Autoclaim-V3\autoclaim_project\server\venv\Lib\site-packages\PIL\__init__.py)
