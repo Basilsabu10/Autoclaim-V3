@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import API_URL from "../config/api";
 
 function Login() {
     const navigate = useNavigate();
@@ -29,7 +30,7 @@ function Login() {
             formDataToSend.append('username', formData.email); // OAuth2 uses 'username' field
             formDataToSend.append('password', formData.password);
 
-            const response = await axios.post("http://127.0.0.1:8000/login", formDataToSend, {
+            const response = await axios.post(`${API_URL}/login`, formDataToSend, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }

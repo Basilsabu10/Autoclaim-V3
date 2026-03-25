@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import API_URL from "../config/api";
 
 /**
  * TrackClaimRedirect
@@ -21,7 +22,7 @@ function TrackClaimRedirect() {
             }
 
             try {
-                const response = await fetch("http://localhost:8000/claims/my", {
+                const response = await fetch(`${API_URL}/claims/my`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },

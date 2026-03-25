@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./Dashboard.css";
+import API_URL from "../config/api";
 
 const statusConfig = {
     pending: {
@@ -57,7 +58,7 @@ function AdminDashboard() {
     const fetchAllClaims = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await fetch("http://localhost:8000/claims/all", {
+            const response = await fetch(`${API_URL}/claims/all`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -86,7 +87,7 @@ function AdminDashboard() {
         try {
             const token = localStorage.getItem("token");
             const response = await fetch(
-                `http://localhost:8000/claims/${claimId}/status?new_status=${newStatus}`,
+                `${API_URL}/claims/${claimId}/status?new_status=${newStatus}`,
                 {
                     method: "PUT",
                     headers: {
@@ -110,7 +111,7 @@ function AdminDashboard() {
     const fetchAllAgents = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await fetch("http://localhost:8000/admin/agents", {
+            const response = await fetch(`${API_URL}/admin/agents`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (response.ok) {
@@ -125,7 +126,7 @@ function AdminDashboard() {
     const fetchRotationStatus = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await fetch("http://localhost:8000/claims/admin/assignment-status", {
+            const response = await fetch(`${API_URL}/claims/admin/assignment-status`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (response.ok) {
@@ -140,7 +141,7 @@ function AdminDashboard() {
     const fetchThreshold = async () => {
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch("http://localhost:8000/claims/admin/settings", {
+            const res = await fetch(`${API_URL}/claims/admin/settings`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (res.ok) {
@@ -164,7 +165,7 @@ function AdminDashboard() {
         try {
             const token = localStorage.getItem("token");
             const res = await fetch(
-                `http://localhost:8000/claims/admin/settings/threshold?value=${val}`,
+                `${API_URL}/claims/admin/settings/threshold?value=${val}`,
                 { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
             );
             if (res.ok) {
@@ -188,7 +189,7 @@ function AdminDashboard() {
         try {
             const token = localStorage.getItem("token");
             const response = await fetch(
-                `http://localhost:8000/claims/admin/agents/${agentId}/toggle-active`,
+                `${API_URL}/claims/admin/agents/${agentId}/toggle-active`,
                 { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
             );
             if (response.ok) {
@@ -215,7 +216,7 @@ function AdminDashboard() {
         try {
             const token = localStorage.getItem("token");
             const response = await fetch(
-                `http://localhost:8000/admin/register-agent?email=${encodeURIComponent(agentEmail)}&password=${encodeURIComponent(agentPassword)}&name=${encodeURIComponent(agentName)}`,
+                `${API_URL}/admin/register-agent?email=${encodeURIComponent(agentEmail)}&password=${encodeURIComponent(agentPassword)}&name=${encodeURIComponent(agentName)}`,
                 {
                     method: "POST",
                     headers: {

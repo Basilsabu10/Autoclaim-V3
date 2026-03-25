@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import API_URL from "../config/api";
 
 function Navbar() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -38,7 +39,7 @@ function Navbar() {
         const token = localStorage.getItem('token');
         if (!token) return;
         try {
-            const res = await fetch('http://localhost:8000/notifications/my', {
+            const res = await fetch(`${API_URL}/notifications/my`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
@@ -81,7 +82,7 @@ function Navbar() {
 
     const markAllRead = async () => {
         const token = localStorage.getItem('token');
-        await fetch('http://localhost:8000/notifications/read-all', {
+        await fetch(`${API_URL}/notifications/read-all`, {
             method: 'POST', headers: { Authorization: `Bearer ${token}` }
         });
         setNotifications(n => n.map(x => ({ ...x, is_read: true })));
@@ -90,7 +91,7 @@ function Navbar() {
 
     const markOneRead = async (id) => {
         const token = localStorage.getItem('token');
-        await fetch(`http://localhost:8000/notifications/${id}/read`, {
+        await fetch(`${API_URL}/notifications/${id}/read`, {
             method: 'PATCH', headers: { Authorization: `Bearer ${token}` }
         });
         setNotifications(n => n.map(x => x.id === id ? { ...x, is_read: true } : x));

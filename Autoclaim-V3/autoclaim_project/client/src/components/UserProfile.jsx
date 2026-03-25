@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
+import API_URL from "../config/api";
 
 function UserProfile() {
     const navigate = useNavigate();
@@ -18,7 +19,7 @@ function UserProfile() {
 
     useEffect(() => {
         const token = localStorage.getItem("token");
-        fetch("http://localhost:8000/me", { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${API_URL}/me`, { headers: { Authorization: `Bearer ${token}` } })
             .then(r => {
                 if (r.status === 401) { navigate("/"); return null; }
                 return r.json();
@@ -46,7 +47,7 @@ function UserProfile() {
         setSaving(true);
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch("http://localhost:8000/me", {
+            const res = await fetch(`${API_URL}/me`, {
                 method: "PUT",
                 headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
                 body: JSON.stringify({ name: form.name.trim() }),

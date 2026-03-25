@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./AITestPage.css";
+import API_URL from "../config/api";
 
 function AITestPage() {
     const [file, setFile] = useState(null);
@@ -31,7 +32,7 @@ function AITestPage() {
 
         try {
             const token = localStorage.getItem("token");
-            const response = await fetch("http://localhost:8000/claims", {
+            const response = await fetch(`${API_URL}/claims`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,

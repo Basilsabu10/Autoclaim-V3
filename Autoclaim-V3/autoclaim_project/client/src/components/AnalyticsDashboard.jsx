@@ -5,6 +5,7 @@ import {
     PieChart, Pie, Cell, Legend, LineChart, Line, Area, AreaChart
 } from "recharts";
 import "./Dashboard.css";
+import API_URL from "../config/api";
 
 const COLORS = ["#4ade80", "#f87171", "#fb923c", "#818cf8", "#94a3b8"];
 const FRAUD_COLORS = { VERY_LOW: "#4ade80", LOW: "#86efac", MEDIUM: "#fb923c", HIGH: "#f87171", UNKNOWN: "#94a3b8" };
@@ -47,7 +48,7 @@ function AnalyticsDashboard() {
 
     useEffect(() => {
         const token = localStorage.getItem("token");
-        fetch("http://localhost:8000/claims/admin/stats", {
+        fetch(`${API_URL}/claims/admin/stats`, {
             headers: { Authorization: `Bearer ${token}` },
         })
             .then(r => {

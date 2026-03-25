@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import "./ClaimUpload.css";
+import API_URL from "../config/api";
 
 function ClaimUpload() {
     const [description, setDescription] = useState("");
@@ -81,7 +82,7 @@ function ClaimUpload() {
         try {
             const token = localStorage.getItem("token");
 
-            const response = await fetch("http://localhost:8000/claims", {
+            const response = await fetch(`${API_URL}/claims`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,

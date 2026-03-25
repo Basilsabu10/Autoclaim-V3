@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./Dashboard.css";
+import API_URL from "../config/api";
 
 const PRIORITY_ORDER = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3, undefined: 4, null: 4 };
 const PRIORITY_STYLE = {
@@ -49,7 +50,7 @@ function AgentDashboard() {
     const fetchAllClaims = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await fetch("http://localhost:8000/claims/all", {
+            const response = await fetch(`${API_URL}/claims/all`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (response.status === 401 || response.status === 403) {
@@ -72,7 +73,7 @@ function AgentDashboard() {
         setUpdating(claimId);
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`http://localhost:8000/claims/${claimId}/status?new_status=${newStatus}`, {
+            const res = await fetch(`${API_URL}/claims/${claimId}/status?new_status=${newStatus}`, {
                 method: "PUT", headers: { Authorization: `Bearer ${token}` },
             });
             if (res.ok) {
@@ -92,7 +93,7 @@ function AgentDashboard() {
         setBulkLoading(true);
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch("http://localhost:8000/claims/bulk-status", {
+            const res = await fetch(`${API_URL}/claims/bulk-status`, {
                 method: "PATCH",
                 headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
                 body: JSON.stringify({ claim_ids: [...selectedIds], new_status: newStatus }),

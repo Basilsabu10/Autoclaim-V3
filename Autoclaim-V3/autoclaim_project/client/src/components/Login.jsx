@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import "./Auth.css";
+import API_URL from "../config/api";
 
 function Login() {
     const [email, setEmail] = useState("");
@@ -18,7 +19,7 @@ function Login() {
         formData.append("password", password);
 
         try {
-            const res = await axios.post("http://127.0.0.1:8000/login", formData);
+            const res = await axios.post(`${API_URL}/login`, formData);
             localStorage.setItem("token", res.data.access_token);
             localStorage.setItem("role", res.data.role);
 

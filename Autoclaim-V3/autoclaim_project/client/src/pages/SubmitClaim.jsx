@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import API_URL from "../config/api";
 
 const stepOrder = ["vehicle", "narrative", "photos", "documents", "review"];
 
@@ -174,7 +175,7 @@ ${formData.description}`;
             }
 
             const response = await axios.post(
-                "http://127.0.0.1:8000/claims",
+                `${API_URL}/claims`,
                 data,
                 {
                     headers: {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./Dashboard.css";
+import API_URL from "../config/api";
 
 const statusConfig = {
     pending: {
@@ -48,7 +49,7 @@ function UserDashboard() {
     const fetchClaims = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await fetch("http://localhost:8000/claims/my", {
+            const response = await fetch(`${API_URL}/claims/my`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -76,7 +77,7 @@ function UserDashboard() {
     const fetchWallet = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await fetch("http://localhost:8000/wallet/me", {
+            const response = await fetch(`${API_URL}/wallet/me`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

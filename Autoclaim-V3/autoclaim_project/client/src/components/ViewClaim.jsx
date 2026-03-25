@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./ViewClaim.css";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import API_URL from "../config/api";
 
 function ViewClaim() {
     const { id } = useParams();
@@ -56,7 +57,7 @@ function ViewClaim() {
     const fetchClaimDetails = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await fetch(`http://localhost:8000/claims/${id}`, {
+            const response = await fetch(`${API_URL}/claims/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (response.status === 401) {
@@ -83,7 +84,7 @@ function ViewClaim() {
     // Feature 7
     const fetchNotes = async () => {
         const token = localStorage.getItem("token");
-        const res = await fetch(`http://localhost:8000/claims/${id}/notes`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`${API_URL}/claims/${id}/notes`, { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) setNotes(await res.json());
     };
 
@@ -91,7 +92,7 @@ function ViewClaim() {
         if (!newNote.trim()) return;
         setSavingNote(true);
         const token = localStorage.getItem("token");
-        const res = await fetch(`http://localhost:8000/claims/${id}/notes`, {
+        const res = await fetch(`${API_URL}/claims/${id}/notes`, {
             method: "POST",
             headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
             body: JSON.stringify({ note: newNote }),
@@ -111,7 +112,7 @@ function ViewClaim() {
         const token = localStorage.getItem("token");
         const formData = new FormData();
         suppFiles.forEach(f => formData.append("files", f));
-        const res = await fetch(`http://localhost:8000/claims/${id}/upload`, {
+        const res = await fetch(`${API_URL}/claims/${id}/upload`, {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
             body: formData,
@@ -130,14 +131,14 @@ function ViewClaim() {
     // Feature 8
     const fetchAgents = async () => {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:8000/admin/agents", { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`${API_URL}/admin/agents`, { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) { const d = await res.json(); setAgents(d.agents || []); }
     };
 
     const assignAgent = async (agentId) => {
         setAssigning(true);
         const token = localStorage.getItem("token");
-        const url = `http://localhost:8000/claims/${id}/assign${agentId ? `?agent_id=${agentId}` : "?agent_id="}`;
+        const url = `${API_URL}/claims/${id}/assign${agentId ? `?agent_id=${agentId}` : "?agent_id="}`;
         const res = await fetch(url, { method: "PUT", headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) { setAssignedAgentId(agentId || null); showToast(agentId ? "Claim assigned!" : "Agent unassigned."); }
         else showToast("Assignment failed.", "error");
@@ -149,7 +150,7 @@ function ViewClaim() {
         setReanalyzing(true);
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`http://localhost:8000/claims/${id}/analyze`, {
+            const res = await fetch(`${API_URL}/claims/${id}/analyze`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -171,7 +172,7 @@ function ViewClaim() {
         setDownloading(true);
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`http://localhost:8000/claims/${id}/report`, {
+            const res = await fetch(`${API_URL}/claims/${id}/report`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!res.ok) {
@@ -203,7 +204,7 @@ function ViewClaim() {
         try {
             const token = localStorage.getItem("token");
             const response = await fetch(
-                `http://localhost:8000/claims/${id}/status?new_status=${newStatus}`,
+                `${API_URL}/claims/${id}/status?new_status=${newStatus}`,
                 {
                     method: "PUT",
                     headers: {
@@ -970,7 +971,7 @@ function ViewClaim() {
                                     {claim.image_paths.map((path, index) => (
                                         <div key={index} className="image-item">
                                             <img
-                                                src={`http://localhost:8000/uploads/${path.split('/').pop()}`}
+                                                src={`${API_URL}/uploads/${path.split('/').pop()}`}
                                                 alt={`Damage ${index + 1}`}
                                                 onError={(e) => {
                                                     e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23ddd' width='200' height='200'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3EImage Not Found%3C/text%3E%3C/svg%3E";
@@ -989,7 +990,7 @@ function ViewClaim() {
                                 <div className="image-gallery">
                                     <div className="image-item">
                                         <img
-                                            src={`http://localhost:8000/uploads/${claim.front_image_path.split('/').pop()}`}
+                                            src={`${API_URL}/uploads/${claim.front_image_path.split('/').pop()}`}
                                             alt="Front View"
                                             onError={(e) => {
                                                 e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23ddd' width='200' height='200'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3EImage Not Found%3C/text%3E%3C/svg%3E";
@@ -1007,7 +1008,7 @@ function ViewClaim() {
                                 <div className="image-gallery">
                                     <div className="image-item">
                                         <img
-                                            src={`http://localhost:8000/uploads/${claim.case_number_image_path.split('/').pop()}`}
+                                            src={`${API_URL}/uploads/${claim.case_number_image_path.split('/').pop()}`}
                                             alt="Case Number"
                                             className="img-fluid"
                                             style={{ maxWidth: '300px', borderRadius: '8px' }}
@@ -1027,7 +1028,7 @@ function ViewClaim() {
                                 <div className="file-item">
                                     <span>📄 {claim.estimate_bill_path.split('/').pop()}</span>
                                     <a
-                                        href={`http://localhost:8000/uploads/${claim.estimate_bill_path.split('/').pop()}`}
+                                        href={`${API_URL}/uploads/${claim.estimate_bill_path.split('/').pop()}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="view-file-btn"
@@ -1074,7 +1075,7 @@ function ViewClaim() {
                             {suppDocs.map((doc, i) => (
                                 <div key={i} style={{ fontSize: "0.85rem", color: "#64748b", display: "flex", alignItems: "center", gap: "8px" }}>
                                     📄 {doc.label || doc.file_path.split("/").pop()}
-                                    <a href={`http://localhost:8000/uploads/${doc.file_path.split("/").pop()}`} target="_blank" rel="noreferrer"
+                                    <a href={`${API_URL}/uploads/${doc.file_path.split("/").pop()}`} target="_blank" rel="noreferrer"
                                         style={{ color: "#7392B7", fontSize: "0.8rem" }}>View</a>
                                 </div>
                             ))}
@@ -1094,7 +1095,7 @@ function ViewClaim() {
                         {suppDocs.map((doc, i) => {
                             const filename = doc.file_path.split("/").pop();
                             const isImage = /\.(jpe?g|png|gif|webp)$/i.test(filename);
-                            const url = `http://localhost:8000/uploads/${filename}`;
+                            const url = `${API_URL}/uploads/${filename}`;
                             return (
                                 <div key={i} style={{
                                     display: "flex", alignItems: "center", gap: "14px",
