@@ -122,6 +122,7 @@ function UserProfile() {
                                 { label: "Full Name", value: form.name, field: "name", icon: "👤", placeholder: "Enter your name" },
 
                                 { label: "Policy ID", value: profile?.policy_id || "—", field: null, icon: "📄" },
+                                { label: "Vehicle Registration", value: profile?.vehicle_number || "—", field: null, icon: "🚗" },
                                 { label: "Member Since", value: profile?.created_at ? new Date(profile.created_at).toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" }) : "—", field: null, icon: "📅" },
                             ].map(({ label, value, field, icon, placeholder }) => (
                                 <div key={label} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
