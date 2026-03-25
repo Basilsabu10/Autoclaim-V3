@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Set YOLO config dir to a writable path (avoids /root/.config/Ultralytics warning)
-ENV YOLO_CONFIG_DIR=/tmp/Ultralytics
+ENV YOLO_CONFIG_DIR=/tmp
 
 # Copy and install full requirements (torch + YOLO + EasyOCR included)
 COPY Autoclaim-V3/autoclaim_project/server/requirements.txt .
