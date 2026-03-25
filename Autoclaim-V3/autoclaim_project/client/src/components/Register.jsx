@@ -18,15 +18,12 @@ function Register() {
         setLoading(true);
 
         try {
-            await axios.post(`${API_URL}/register`, null, {
-                params: {
-                    email: email,
-                    password: password,
-                    role: 'user',
-                    name: name,
-                    policy_id: policyId,
-                    vehicle_number: vehicleNumber
-                }
+            await axios.post(`${API_URL}/register`, {
+                email: email,
+                password: password,
+                username: name,
+                policy_number: policyId,
+                vehicle_number: vehicleNumber
             });
 
             alert("Registration Successful! Please login.");
