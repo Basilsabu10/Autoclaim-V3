@@ -51,10 +51,9 @@ def register(
     Register a new user account (public registration).
     
     This endpoint only allows registration of regular 'user' accounts.
-    Agents must be registered by admins via the admin dashboard.
-    
-    Args:
-        request: Registration data (email, password, name, policy_number, vehicle_number)
+    If a policy_number is provided, it is validated against the policies table,
+    ownership is transferred to the new user, and the vehicle registration
+    is copied to the user profile.
     """
     # Check if user already exists
     existing = db.query(models.User).filter(models.User.email == request.email).first()
@@ -64,18 +63,51 @@ def register(
     # Use 'username' field if 'name' is not provided (frontend compatibility)
     user_name = request.name or request.username
     
-    # Hash the password
+    # ── Validate & look up the policy (if provided) ─────────────────────
+    policy = None
+    vehicle_reg = request.vehicle_number  # fallback to manually entered value
+    
+    if request.policy_number:
+        try:
+            pid = int(request.policy_number)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Policy ID must be a number")
+        
+        policy = db.query(models.Policy).filter(models.Policy.id == pid).first()
+        if not policy:
+            raise HTTPException(status_code=404, detail=f"Policy ID {pid} not found")
+        
+        # Check the policy isn't already claimed by another regular user
+        if policy.user_id:
+            owner = db.query(models.User).filter(models.User.id == policy.user_id).first()
+            if owner and owner.role == "user":
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Policy {pid} is already linked to another user"
+                )
+        
+        # Use the vehicle registration from the policy record
+        vehicle_reg = policy.vehicle_registration
+    
+    # ── Create the user ─────────────────────────────────────────────────
     hashed_pw = get_password_hash(request.password)
     new_user = models.User(
         email=request.email, 
         hashed_password=hashed_pw, 
-        role="user",  # Hardcoded: public registration only creates 'user' accounts
+        role="user",
         name=user_name,
-        policy_id=request.policy_number,
-        vehicle_number=request.vehicle_number
+        policy_id=str(policy.id) if policy else request.policy_number,
+        vehicle_number=vehicle_reg,
     )
     db.add(new_user)
     db.commit()
+    db.refresh(new_user)
+    
+    # ── Link policy to the new user ─────────────────────────────────────
+    if policy:
+        policy.user_id = new_user.id
+        db.commit()
+        logger.info("Policy %s linked to user %s (%s)", policy.id, new_user.id, new_user.email)
     
     return {"message": "User created successfully"}
 
