@@ -1,0 +1,36 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.9, pytest-9.0.2, pluggy-1.6.0 -- C:\Autoclaim-main\Autoclaim-V3\autoclaim_project\server\venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Autoclaim-main\Autoclaim-V3\autoclaim_project\server
+configfile: pytest.ini
+plugins: anyio-4.12.1
+collecting ... collected 26 items
+
+tests/test_auth.py::TestRegistration::test_register_valid_user PASSED    [  3%]
+tests/test_auth.py::TestRegistration::test_register_invalid_policy_number PASSED [  7%]
+tests/test_auth.py::TestRegistration::test_register_links_vehicle_from_policy PASSED [ 11%]
+tests/test_auth.py::TestRegistration::test_register_duplicate_policy_rejected PASSED [ 15%]
+tests/test_auth.py::TestRegistration::test_register_missing_policy_number PASSED [ 19%]
+tests/test_auth.py::TestRegistration::test_register_duplicate_email PASSED [ 23%]
+tests/test_auth.py::TestRegistration::test_register_short_password PASSED [ 26%]
+tests/test_auth.py::TestRegistration::test_register_invalid_email_format PASSED [ 30%]
+tests/test_auth.py::TestRegistration::test_register_creates_user_role PASSED [ 34%]
+tests/test_auth.py::TestRegistration::test_register_password_is_hashed PASSED [ 38%]
+tests/test_auth.py::TestLogin::test_login_valid_credentials PASSED       [ 42%]
+tests/test_auth.py::TestLogin::test_login_wrong_password PASSED          [ 46%]
+tests/test_auth.py::TestLogin::test_login_nonexistent_user PASSED        [ 50%]
+tests/test_auth.py::TestLogin::test_login_returns_correct_role_for_agent PASSED [ 53%]
+tests/test_auth.py::TestLogin::test_login_returns_correct_role_for_admin PASSED [ 57%]
+tests/test_auth.py::TestProfile::test_get_me_with_valid_token PASSED     [ 61%]
+tests/test_auth.py::TestProfile::test_get_me_without_token PASSED        [ 65%]
+tests/test_auth.py::TestProfile::test_get_me_with_invalid_token PASSED   [ 69%]
+tests/test_auth.py::TestProfile::test_update_profile_name PASSED         [ 73%]
+tests/test_auth.py::TestProfile::test_update_profile_vehicle_number PASSED [ 76%]
+tests/test_auth.py::TestProfile::test_update_profile_blank_name_rejected PASSED [ 80%]
+tests/test_auth.py::TestAdminAgentManagement::test_admin_registers_agent PASSED [ 84%]
+tests/test_auth.py::TestAdminAgentManagement::test_non_admin_cannot_register_agent PASSED [ 88%]
+tests/test_auth.py::TestAdminAgentManagement::test_agent_cannot_register_agent PASSED [ 92%]
+tests/test_auth.py::TestAdminAgentManagement::test_admin_list_agents PASSED [ 96%]
+tests/test_auth.py::TestAdminAgentManagement::test_non_admin_cannot_list_agents PASSED [100%]
+
+============================= 26 passed in 0.77s ==============================

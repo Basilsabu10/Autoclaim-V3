@@ -525,22 +525,16 @@ def analyze_claim(
 
 
 def initialize_services() -> Dict[str, bool]:
-    """Initialize all AI services and return status."""
+    """Register AI service availability (models load lazily on first request)."""
     
     status = {
-        "yolo_seg": False,
+        "yolo_seg": YOLO_SEG_AVAILABLE,  # Available but not loaded yet
         "groq": GROQ_AVAILABLE,
         "ai_mode": "unified",
     }
 
-    # Initialize YOLO11m-seg model
-    if YOLO_SEG_AVAILABLE:
-        status["yolo_seg"] = init_seg_model()
-        info = get_model_info()
-        gpu_status = "GPU ✓" if info["gpu_info"].get("available") else "CPU"
-        print(f"[AI Services] YOLO-Seg: {status['yolo_seg']} ({gpu_status}), "
-              f"Groq: {status['groq']}, Mode: unified")
-    else:
-        print(f"[AI Services] YOLO-Seg: NOT AVAILABLE, Groq: {status['groq']}, Mode: unified")
+    # Don't load YOLO model here — it will init lazily on first analyze call
+    print(f"[AI Services] YOLO-Seg: {'available' if YOLO_SEG_AVAILABLE else 'NOT AVAILABLE'}, "
+          f"Groq: {status['groq']}, Mode: unified (lazy loading)")
 
     return status

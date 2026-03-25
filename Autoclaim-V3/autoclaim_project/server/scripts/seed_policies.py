@@ -1,198 +1,175 @@
 """
-Seed Dummy Policy Data
+Seed Policy Data — works with any DATABASE_URL (SQLite or Neon PostgreSQL).
 
-Creates sample policy plans and policies for testing the AutoClaim system.
+Creates policy plans and unlinked policies that users can claim during registration.
+
+Usage:
+  1. Set DATABASE_URL in your .env:
+       - Local:  DATABASE_URL=sqlite:///./autoclaim.db
+       - Neon:   DATABASE_URL=postgresql://user:pass@host/dbname?sslmode=require
+  2. Run:  python scripts/seed_policies.py
+
+This script is idempotent — it skips rows that already exist.
+
+TIP for Neon Free Tier:
+  Neon suspends inactive databases after ~5 days and may delete data.
+  Re-run this script after any data loss to re-seed the policies.
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from datetime import datetime, timedelta
-from app.db.database import SessionLocal
-from app.db.models import User, PolicyPlan, Policy
+from dotenv import load_dotenv
+load_dotenv()
+
+from app.db.database import SessionLocal, engine, Base
+from app.db.models import PolicyPlan, Policy
 
 
 def create_policy_plans(db):
     """Create sample policy plan templates."""
-    
+
     plans = [
         {
             "name": "Basic Coverage",
             "description": "Essential coverage for everyday drivers. Covers basic collision and liability.",
-            "coverage_amount": 50000,
-            "premium_monthly": 120
+            "coverage_amount": 100000,
+            "premium_monthly": 800
         },
         {
             "name": "Standard Coverage",
             "description": "Comprehensive protection with enhanced benefits. Includes collision, comprehensive, and roadside assistance.",
-            "coverage_amount": 100000,
-            "premium_monthly": 200
+            "coverage_amount": 300000,
+            "premium_monthly": 1500
         },
         {
             "name": "Premium Coverage",
             "description": "Maximum protection for high-value vehicles. Full coverage with zero deductible option.",
-            "coverage_amount": 250000,
-            "premium_monthly": 350
+            "coverage_amount": 500000,
+            "premium_monthly": 2500
         },
         {
-            "name": "Platinum Elite",
+            "name": "Ultimate Coverage",
             "description": "Ultimate insurance package with concierge service. Luxury vehicle specialist coverage.",
+            "coverage_amount": 1000000,
+            "premium_monthly": 4000
+        },
+        {
+            "name": "Comprehensive",
+            "description": "Comprehensive plan covering all damage types.",
             "coverage_amount": 500000,
-            "premium_monthly": 600
-        }
+            "premium_monthly": 2500
+        },
     ]
-    
-    created_plans = []
+
+    created_plans = {}
     for plan_data in plans:
-        # Check if plan already exists
         existing = db.query(PolicyPlan).filter(PolicyPlan.name == plan_data["name"]).first()
         if existing:
-            print(f"  ✓ Policy plan '{plan_data['name']}' already exists")
-            created_plans.append(existing)
+            print(f"  ✔ Plan '{plan_data['name']}' already exists (id={existing.id})")
+            created_plans[plan_data["name"]] = existing.id
         else:
             plan = PolicyPlan(**plan_data)
             db.add(plan)
-            db.commit()
-            db.refresh(plan)
-            created_plans.append(plan)
-            print(f"  ✓ Created policy plan: {plan.name}")
-    
+            db.flush()
+            print(f"  ✚ Created plan '{plan_data['name']}' (id={plan.id})")
+            created_plans[plan_data["name"]] = plan.id
+
     return created_plans
 
 
-def create_sample_policies(db, plans):
-    """Create sample policies for the admin user."""
-    
-    # Get admin user
-    admin = db.query(User).filter(User.email == "admin@autoclaim.com").first()
-    if not admin:
-        print("  ⚠️  Admin user not found. Please run the server first to create admin user.")
-        return []
-    
-    # Sample policies data
-    sample_policies = [
-        {
-            "user_id": admin.id,
-            "plan_id": plans[2].id,  # Premium Coverage
-            "vehicle_make": "Tesla",
-            "vehicle_model": "Model 3",
-            "vehicle_year": 2023,
-            "vehicle_registration": "TES3LA",
-            "start_date": datetime.now() - timedelta(days=180),
-            "end_date": datetime.now() + timedelta(days=185),
-            "status": "active"
-        },
-        {
-            "user_id": admin.id,
-            "plan_id": plans[1].id,  # Standard Coverage
-            "vehicle_make": "Toyota",
-            "vehicle_model": "Camry",
-            "vehicle_year": 2022,
-            "vehicle_registration": "CAM22RY",
-            "start_date": datetime.now() - timedelta(days=90),
-            "end_date": datetime.now() + timedelta(days=275),
-            "status": "active"
-        },
-        {
-            "user_id": admin.id,
-            "plan_id": plans[0].id,  # Basic Coverage
-            "vehicle_make": "Honda",
-            "vehicle_model": "Civic",
-            "vehicle_year": 2020,
-            "vehicle_registration": "CIV20IC",
-            "start_date": datetime.now() - timedelta(days=365),
-            "end_date": datetime.now() - timedelta(days=30),
-            "status": "expired"
-        }
+def create_policies(db, plan_map):
+    """
+    Create unlinked policies (user_id=0) available for user registration.
+
+    When a user registers with one of these policy IDs, the /register endpoint
+    will link the policy to the user and auto-populate their vehicle details.
+    """
+
+    now = datetime.utcnow()
+    one_year = timedelta(days=365)
+
+    policies = [
+        {"plan": "Premium Coverage",  "make": "Honda",       "model": "City",     "year": 2022, "reg": "KL-01-AB-1234"},
+        {"plan": "Premium Coverage",  "make": "Toyota",      "model": "Fortuner", "year": 2023, "reg": "KL-02-CD-5678"},
+        {"plan": "Premium Coverage",  "make": "Kia",         "model": "Seltos",   "year": 2020, "reg": "KL-07-CU-7475"},
+        {"plan": "Ultimate Coverage", "make": "Kia",         "model": "Seltos",   "year": 2020, "reg": "KL-07-CU-7476"},
+        {"plan": "Comprehensive",     "make": "Volkswagen",  "model": "Vento",    "year": 2020, "reg": "KL-64-C-599"},
+        {"plan": "Comprehensive",     "make": "Volkswagen",  "model": "Vento",    "year": 2014, "reg": "KL-63-C-599"},
+        {"plan": "Comprehensive",     "make": "Suzuki",      "model": "Baleno",   "year": 2020, "reg": "KL 63 F 3227"},
+        {"plan": "Standard Coverage", "make": "Maruti",      "model": "Swift",    "year": 2021, "reg": "KL-10-AA-1111"},
+        {"plan": "Basic Coverage",    "make": "Hyundai",     "model": "i20",      "year": 2019, "reg": "KL-05-BB-2222"},
+        {"plan": "Premium Coverage",  "make": "Tata",        "model": "Nexon",    "year": 2023, "reg": "KL-14-CC-3333"},
     ]
-    
-    created_policies = []
-    for policy_data in sample_policies:
-        # Check if similar policy exists
-        existing = db.query(Policy).filter(
-            Policy.vehicle_registration == policy_data["vehicle_registration"]
-        ).first()
-        
+
+    for p in policies:
+        existing = db.query(Policy).filter(Policy.vehicle_registration == p["reg"]).first()
         if existing:
-            print(f"  ✓ Policy for {policy_data['vehicle_registration']} already exists")
-            created_policies.append(existing)
+            print(f"  ✔ Policy for {p['reg']} already exists (id={existing.id})")
         else:
-            policy = Policy(**policy_data)
+            policy = Policy(
+                user_id=0,  # 0 = unlinked, available for registration
+                plan_id=plan_map[p["plan"]],
+                vehicle_make=p["make"],
+                vehicle_model=p["model"],
+                vehicle_year=p["year"],
+                vehicle_registration=p["reg"],
+                start_date=now,
+                end_date=now + one_year,
+                status="active",
+            )
             db.add(policy)
-            db.commit()
-            db.refresh(policy)
-            created_policies.append(policy)
-            print(f"  ✓ Created policy: {policy.vehicle_make} {policy.vehicle_model} ({policy.vehicle_registration})")
-    
-    return created_policies
+            db.flush()
+            print(f"  ✚ Created policy for {p['reg']} (id={policy.id})")
 
 
-def display_policy_data(db):
-    """Display all policy plans and policies."""
-    
-    print("\n" + "=" * 80)
-    print("  📋 POLICY PLANS")
-    print("=" * 80 + "\n")
-    
-    plans = db.query(PolicyPlan).all()
-    for plan in plans:
-        print(f"  Plan ID: {plan.id}")
-        print(f"  Name: {plan.name}")
-        print(f"  Description: {plan.description}")
-        print(f"  Coverage Amount: ${plan.coverage_amount:,}")
-        print(f"  Monthly Premium: ${plan.premium_monthly}")
-        print(f"  Active Policies: {len(plan.policies)}")
-        print(f"  {'-' * 76}")
-    
-    print("\n" + "=" * 80)
-    print("  🚗 ACTIVE POLICIES")
-    print("=" * 80 + "\n")
-    
-    policies = db.query(Policy).all()
-    for policy in policies:
-        print(f"  Policy ID: {policy.id}")
-        print(f"  User: {policy.user.email}")
-        print(f"  Plan: {policy.plan.name}")
-        print(f"  Vehicle: {policy.vehicle_year} {policy.vehicle_make} {policy.vehicle_model}")
-        print(f"  Registration: {policy.vehicle_registration}")
-        print(f"  Status: {policy.status.upper()}")
-        print(f"  Coverage: ${policy.plan.coverage_amount:,}")
-        print(f"  Monthly Premium: ${policy.plan.premium_monthly}")
-        print(f"  Start Date: {policy.start_date.strftime('%Y-%m-%d')}")
-        print(f"  End Date: {policy.end_date.strftime('%Y-%m-%d')}")
-        print(f"  Claims: {len(policy.claims)}")
-        print(f"  {'-' * 76}")
+def display_summary(db):
+    """Print a summary of the seeded data."""
+    total_plans = db.query(PolicyPlan).count()
+    total_policies = db.query(Policy).count()
+    available = db.query(Policy).filter(Policy.user_id == 0).count()
+
+    print(f"\n   Plans: {total_plans}  |  Policies: {total_policies}  |  Available for registration: {available}")
+
+    print("\n   Available policies (users can register with these IDs):")
+    free = db.query(Policy).filter(Policy.user_id == 0).all()
+    for p in free:
+        print(f"     ID {p.id}  →  {p.vehicle_year} {p.vehicle_make} {p.vehicle_model}  ({p.vehicle_registration})")
 
 
 def main():
-    """Main function to seed and display policy data."""
+    """Main function to seed policy data."""
+    # Ensure tables exist
+    Base.metadata.create_all(bind=engine)
+
     db = SessionLocal()
-    
     try:
-        print("\n" + "=" * 80)
+        print("\n══════════════════════════════════════════════════════")
         print("  🌱 Seeding Policy Data")
-        print("=" * 80 + "\n")
-        
-        # Create policy plans
+        print("══════════════════════════════════════════════════════\n")
+
         print("Creating policy plans...")
-        plans = create_policy_plans(db)
-        print(f"\n✅ Total policy plans: {len(plans)}\n")
-        
-        # Create sample policies
-        print("Creating sample policies...")
-        policies = create_sample_policies(db, plans)
-        print(f"\n✅ Total policies created: {len(policies)}\n")
-        
-        # Display all data
-        display_policy_data(db)
-        
-        print("\n" + "=" * 80)
-        print("  ✅ Policy data seeding complete!")
-        print("=" * 80 + "\n")
-        
+        plan_map = create_policy_plans(db)
+        print(f"\n✅ Policy plans ready ({len(plan_map)} total)\n")
+
+        print("Creating policies (unlinked, available for registration)...")
+        create_policies(db, plan_map)
+
+        db.commit()
+
+        display_summary(db)
+
+        print("\n══════════════════════════════════════════════════════")
+        print("  ✅ Seed complete!")
+        print("══════════════════════════════════════════════════════\n")
+
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
         traceback.print_exc()
         db.rollback()
-    
     finally:
         db.close()
 

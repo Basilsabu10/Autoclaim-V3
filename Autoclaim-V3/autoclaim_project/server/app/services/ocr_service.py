@@ -791,20 +791,9 @@ def extract_number_plate(image_path: str, debug: bool = False) -> Dict[str, Any]
                   f"(confidence={groq_result['confidence']})")
         return groq_result
 
-    # ── 2. Fall back to EasyOCR ──────────────────────────────────────────
+    # ── 2. Groq unavailable or no valid plate ─────────────────────────────
     if debug:
-        print("[OCR] Groq unavailable or returned no valid plate — trying EasyOCR...")
-
-    easyocr_result = _easyocr_extract_plate(image_path, debug=debug)
-
-    if easyocr_result is not None:
-        if debug:
-            print(f"[OCR] ✓ EasyOCR returned: {easyocr_result['plate_text']} "
-                  f"(confidence={easyocr_result['confidence']})")
-        return easyocr_result
-
-    if debug:
-        print("[OCR] ✗ No plate detected by either method")
+        print("[OCR] Groq unavailable or returned no valid plate — no fallback OCR")
 
     return result
 

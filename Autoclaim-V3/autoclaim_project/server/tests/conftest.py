@@ -128,3 +128,45 @@ def agent_token(client, agent_user):
 @pytest.fixture()
 def admin_token(client, admin_user):
     return _auth_headers(client, "admin@test.com", "adminpass")
+
+
+# --------------------------------------------------------------------------- #
+#  Policy fixtures                                                             #
+# --------------------------------------------------------------------------- #
+
+@pytest.fixture()
+def policy_plan(db):
+    """Create a sample policy plan for testing."""
+    from datetime import datetime
+    plan = models.PolicyPlan(
+        name="Standard Coverage",
+        description="Standard coverage plan",
+        coverage_amount=500000,
+        premium_monthly=1500,
+    )
+    db.add(plan)
+    db.commit()
+    db.refresh(plan)
+    return plan
+
+
+@pytest.fixture()
+def unlinked_policy(db, policy_plan):
+    """Create a policy that is NOT yet linked to any registered user."""
+    from datetime import datetime
+    # Use user_id=0 as a placeholder (no real user)
+    policy = models.Policy(
+        user_id=0,
+        plan_id=policy_plan.id,
+        vehicle_make="Maruti",
+        vehicle_model="Baleno",
+        vehicle_year=2020,
+        vehicle_registration="KL-07-XY-9999",
+        start_date=datetime(2024, 1, 1),
+        end_date=datetime(2025, 1, 1),
+        status="active",
+    )
+    db.add(policy)
+    db.commit()
+    db.refresh(policy)
+    return policy
