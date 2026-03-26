@@ -51,18 +51,32 @@ def register(
     Register a new user account (public registration).
     
     This endpoint only allows registration of regular 'user' accounts.
+<<<<<<< HEAD
     If a policy_number is provided, it is validated against the policies table,
     ownership is transferred to the new user, and the vehicle registration
     is copied to the user profile.
+=======
+    Agents must be registered by admins via the admin dashboard.
+    The policy_number must correspond to a valid Policy.id in the database.
+    
+    Args:
+        request: Registration data (email, password, name, policy_number)
+>>>>>>> b394b5b5980b3d970fd5d97e3aff16de5451db8e
     """
     # Check if user already exists
     existing = db.query(models.User).filter(models.User.email == request.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Use 'username' field if 'name' is not provided (frontend compatibility)
-    user_name = request.name or request.username
+    # ── Validate policy number ───────────────────────────────────────────
+    if not request.policy_number:
+        raise HTTPException(status_code=400, detail="Policy number is required")
+    try:
+        policy_id_int = int(request.policy_number)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid policy number format")
     
+<<<<<<< HEAD
     # ── Validate & look up the policy (if provided) ─────────────────────
     policy = None
     vehicle_reg = request.vehicle_number  # fallback to manually entered value
@@ -90,16 +104,47 @@ def register(
         vehicle_reg = policy.vehicle_registration
     
     # ── Create the user ─────────────────────────────────────────────────
+=======
+    policy = db.query(models.Policy).filter(models.Policy.id == policy_id_int).first()
+    if not policy:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid policy number — no such policy exists"
+        )
+    
+    # Ensure the policy isn't already claimed by another registered user
+    existing_owner = db.query(models.User).filter(
+        models.User.policy_id == str(policy_id_int)
+    ).first()
+    if existing_owner:
+        raise HTTPException(
+            status_code=400,
+            detail="This policy is already linked to another user"
+        )
+    
+    # ── Create user ──────────────────────────────────────────────────────
+    user_name = request.name or request.username  # frontend compatibility
+>>>>>>> b394b5b5980b3d970fd5d97e3aff16de5451db8e
     hashed_pw = get_password_hash(request.password)
+    
     new_user = models.User(
         email=request.email, 
         hashed_password=hashed_pw, 
         role="user",
         name=user_name,
+<<<<<<< HEAD
         policy_id=str(policy.id) if policy else request.policy_number,
         vehicle_number=vehicle_reg,
+=======
+        policy_id=str(policy.id),
+        vehicle_number=policy.vehicle_registration  # auto-populate from policy
+>>>>>>> b394b5b5980b3d970fd5d97e3aff16de5451db8e
     )
     db.add(new_user)
+    db.flush()  # get new_user.id before commit
+    
+    # Link the policy record to this new user
+    policy.user_id = new_user.id
     db.commit()
     db.refresh(new_user)
     

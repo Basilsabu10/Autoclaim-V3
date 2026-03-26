@@ -23,17 +23,73 @@ import pytest
 
 class TestRegistration:
 
-    def test_register_valid_user(self, client):
-        """TC-01: Register with all valid fields returns 200."""
+    def test_register_valid_user(self, client, unlinked_policy):
+        """TC-01: Register with a valid policy returns 200 and links vehicle details."""
         resp = client.post("/register", json={
             "email": "newuser@example.com",
             "password": "secure123",
             "username": "New User",
-            "policy_number": "POL999",
-            "vehicle_number": "KL05CD5678",
+            "policy_number": str(unlinked_policy.id),
         })
         assert resp.status_code == 200
         assert resp.json()["message"] == "User created successfully"
+
+    def test_register_invalid_policy_number(self, client):
+        """TC-11: Register with a non-existent policy number returns 400."""
+        resp = client.post("/register", json={
+            "email": "badpolicy@example.com",
+            "password": "secure123",
+            "username": "Bad Policy User",
+            "policy_number": "999999",
+        })
+        assert resp.status_code == 400
+        assert "no such policy" in resp.json()["detail"].lower()
+
+    def test_register_links_vehicle_from_policy(self, client, db, unlinked_policy):
+        """TC-12: After registration, user's vehicle_number matches policy's vehicle_registration."""
+        from app.db import models
+
+        client.post("/register", json={
+            "email": "vcheck@example.com",
+            "password": "secure123",
+            "username": "Vehicle Check",
+            "policy_number": str(unlinked_policy.id),
+        })
+        user = db.query(models.User).filter(
+            models.User.email == "vcheck@example.com"
+        ).first()
+        assert user is not None
+        assert user.vehicle_number == unlinked_policy.vehicle_registration
+        assert user.policy_id == str(unlinked_policy.id)
+
+    def test_register_duplicate_policy_rejected(self, client, db, unlinked_policy):
+        """TC-13: Registering with an already-claimed policy returns 400."""
+        # First registration claims the policy
+        client.post("/register", json={
+            "email": "first@example.com",
+            "password": "secure123",
+            "username": "First User",
+            "policy_number": str(unlinked_policy.id),
+        })
+        # Second registration with same policy should fail
+        resp = client.post("/register", json={
+            "email": "second@example.com",
+            "password": "secure123",
+            "username": "Second User",
+            "policy_number": str(unlinked_policy.id),
+        })
+        assert resp.status_code == 400
+        assert "already linked" in resp.json()["detail"].lower()
+
+    def test_register_missing_policy_number(self, client):
+        """Register without a policy number returns 400."""
+        resp = client.post("/register", json={
+            "email": "nopolicy@example.com",
+            "password": "secure123",
+            "username": "No Policy",
+        })
+        assert resp.status_code == 400
+        assert "required" in resp.json()["detail"].lower()
 
     def test_register_duplicate_email(self, client, regular_user):
         """TC-02: Registering with an already-used email returns 400."""
@@ -63,7 +119,7 @@ class TestRegistration:
         })
         assert resp.status_code == 422
 
-    def test_register_creates_user_role(self, client, db):
+    def test_register_creates_user_role(self, client, db, unlinked_policy):
         """Public registration always creates role='user' (never admin/agent)."""
         from app.db import models
 
@@ -71,6 +127,7 @@ class TestRegistration:
             "email": "rolecheck@example.com",
             "password": "rolepass1",
             "username": "Role Check",
+            "policy_number": str(unlinked_policy.id),
         })
         user = db.query(models.User).filter(
             models.User.email == "rolecheck@example.com"
@@ -78,7 +135,7 @@ class TestRegistration:
         assert user is not None
         assert user.role == "user"
 
-    def test_register_password_is_hashed(self, client, db):
+    def test_register_password_is_hashed(self, client, db, unlinked_policy):
         """Password must not be stored in plain text."""
         from app.db import models
 
@@ -86,6 +143,7 @@ class TestRegistration:
             "email": "hashtest@example.com",
             "password": "plaintextpass",
             "username": "Hash Test",
+            "policy_number": str(unlinked_policy.id),
         })
         user = db.query(models.User).filter(
             models.User.email == "hashtest@example.com"

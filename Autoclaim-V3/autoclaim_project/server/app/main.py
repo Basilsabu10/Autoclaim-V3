@@ -52,12 +52,72 @@ app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 async def startup_event():
     """Initialize AI services on startup."""
     print("🚀 Starting AutoClaim server...")
+<<<<<<< HEAD
 
     # Initialize AI services
     ai_status = ai_orchestrator.initialize_services()
     print(f"✅ AI Services: {ai_status}")
 
     print("✅ Server ready!")
+=======
+    
+    # Initialize AI services (lazy — models load on first request, not at startup)
+    try:
+        ai_status = ai_orchestrator.initialize_services()
+        print(f"✅ AI Services registered: {ai_status}")
+    except Exception as e:
+        print(f"⚠️  AI init deferred (will load on first request): {e}")
+    
+    # Create default admin user if it doesn't exist
+    try:
+        from app.db.database import SessionLocal
+        from app.core.security import get_password_hash
+        
+        db = SessionLocal()
+        try:
+            # Hardcoded admin credentials
+            ADMIN_EMAIL = "admin@autoclaim.com"
+            ADMIN_PASSWORD = "admin123"
+            
+            admin = db.query(models.User).filter(models.User.email == ADMIN_EMAIL).first()
+            if not admin:
+                admin = models.User(
+                    email=ADMIN_EMAIL,
+                    hashed_password=get_password_hash(ADMIN_PASSWORD),
+                    role="admin",
+                    name="System Administrator"
+                )
+                db.add(admin)
+                db.commit()
+                print(f"✅ Admin user created: {ADMIN_EMAIL} / {ADMIN_PASSWORD}")
+            else:
+                print(f"✅ Admin user exists: {ADMIN_EMAIL}")
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"⚠️  Admin user creation failed: {e}")
+    
+    # ── Auto-seed policy plans & policies ────────────────────────────────
+    # Ensures policies are always available for registration, even after
+    # Neon free-tier data eviction. Safe to run every startup (idempotent).
+    try:
+        from app.db.database import SessionLocal
+        db = SessionLocal()
+        try:
+            from scripts.seed_policies import create_policy_plans, create_policies, get_or_create_unassigned_user
+            print("🌱 Seeding policy data...")
+            plan_map = create_policy_plans(db)
+            unassigned_id = get_or_create_unassigned_user(db)
+            create_policies(db, plan_map, unassigned_id)
+            db.commit()
+            print("✅ Policy data seeded successfully")
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"⚠️  Policy seeding skipped: {e}")
+    
+    print(f"✅ Server ready!")
+>>>>>>> b394b5b5980b3d970fd5d97e3aff16de5451db8e
 
 
 @app.get("/")

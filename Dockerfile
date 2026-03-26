@@ -14,13 +14,13 @@ FROM python:3.11-slim
 
 # System dependencies for OpenCV, EasyOCR, and psycopg2
 RUN apt-get update && apt-get install -y \
-    libgl1 \
-    libglib2.0-0 \
-    libgomp1 \
-    gcc \
-    g++ \
-    wget \
-    && rm -rf /var/lib/apt/lists/*
+  libgl1 \
+  libglib2.0-0 \
+  libgomp1 \
+  gcc \
+  g++ \
+  wget \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -37,14 +37,14 @@ COPY Autoclaim-V3/autoclaim_project/server .
 # Download YOLO model weights at build time (bypasses HF 10MB LFS limit)
 # Files are hosted on GitHub (pushed via git add -f from local)
 RUN mkdir -p /app/models && \
-    wget -q --show-progress \
-      "https://github.com/Basilsabu10/Autoclaim-V3/raw/hf-deploy/Autoclaim-V3/autoclaim_project/server/models/best.pt" \
-      -O /app/models/best.pt && \
-    wget -q --show-progress \
-      "https://github.com/Basilsabu10/Autoclaim-V3/raw/hf-deploy/Autoclaim-V3/autoclaim_project/server/models/damage_seg_best.pt" \
-      -O /app/models/damage_seg_best.pt && \
-    echo "[OK] YOLO models downloaded" && \
-    ls -lh /app/models/
+  wget -q --show-progress \
+  "https://github.com/Basilsabu10/Autoclaim-V3/raw/hf-deploy/Autoclaim-V3/autoclaim_project/server/models/best.pt" \
+  -O /app/models/best.pt && \
+  wget -q --show-progress \
+  "https://github.com/Basilsabu10/Autoclaim-V3/raw/hf-deploy/Autoclaim-V3/autoclaim_project/server/models/damage_seg_best.pt" \
+  -O /app/models/damage_seg_best.pt && \
+  echo "[OK] YOLO models downloaded" && \
+  ls -lh /app/models/
 
 # HuggingFace Spaces always serves on port 7860
 EXPOSE 7860
