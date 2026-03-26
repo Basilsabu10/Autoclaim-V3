@@ -44,8 +44,11 @@ class Settings:
     # Legacy YOLO model path (kept for backward compatibility)
     YOLO_MODEL_PATH: str = os.getenv("YOLO_MODEL_PATH", str(BASE_DIR / "yolov8n.pt"))
 
-    # Upload directory
-    UPLOAD_DIR: str = str(BASE_DIR / "uploads")
+    # Upload directory — use HuggingFace persistent storage (/data) if available
+    UPLOAD_DIR: str = os.getenv(
+        "UPLOAD_DIR",
+        "/data/uploads" if os.path.isdir("/data") else str(BASE_DIR / "uploads")
+    )
     
     # CORS — always allow localhost for dev; add production frontend URL when set
     ALLOWED_ORIGINS: list = [

@@ -60,10 +60,9 @@ app.include_router(notifications.router)
 app.include_router(wallet.router)
 app.include_router(price_router)
 
-# Serve uploaded files (images, documents)
-UPLOADS_DIR = os.path.join(os.path.dirname(__file__), "..", "uploads")
-os.makedirs(UPLOADS_DIR, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
+# Serve uploaded files (images, documents) — uses persistent storage on HuggingFace
+os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 @app.on_event("startup")
 async def startup_event():
