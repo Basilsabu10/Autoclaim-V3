@@ -52,14 +52,6 @@ app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 async def startup_event():
     """Initialize AI services on startup."""
     print("🚀 Starting AutoClaim server...")
-<<<<<<< HEAD
-
-    # Initialize AI services
-    ai_status = ai_orchestrator.initialize_services()
-    print(f"✅ AI Services: {ai_status}")
-
-    print("✅ Server ready!")
-=======
     
     # Initialize AI services (lazy — models load on first request, not at startup)
     try:
@@ -117,7 +109,6 @@ async def startup_event():
         print(f"⚠️  Policy seeding skipped: {e}")
     
     print(f"✅ Server ready!")
->>>>>>> b394b5b5980b3d970fd5d97e3aff16de5451db8e
 
 
 @app.get("/")
