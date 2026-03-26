@@ -180,6 +180,7 @@ class Claim(Base):
     # Upload paths
     front_image_path = Column(String, nullable=True)
     estimate_bill_path = Column(String, nullable=True)
+    gd_entry_path = Column(String, nullable=True)
 
     # Quick-access fields (denormalized for performance)
     vehicle_number_plate = Column(String, nullable=True)

@@ -1,0 +1,16 @@
+data: {"data":"===== Application Startup at 2026-03-26 12:36:51 =====\n","timestamp":"2026-03-26T12:36:51Z"}
+
+data: {"data":"Creating new Ultralytics Settings v0.0.6 file ✅ ","timestamp":"2026-03-26T12:54:11.909Z"}
+
+data: {"data":"View Ultralytics Settings with 'yolo settings' or at '/tmp/Ultralytics/settings.json'","timestamp":"2026-03-26T12:54:11.909Z"}
+
+data: {"data":"Update Settings with 'yolo settings key=value', i.e. 'yolo settings runs_dir=path/to/dir'. For help see https://docs.ultralytics.com/quickstart/#ultralytics-settings.","timestamp":"2026-03-26T12:54:11.909Z"}
+
+data: {"data":"INFO:     Started server process [1]","timestamp":"2026-03-26T12:54:14.431Z"}
+
+data: {"data":"INFO:     Waiting for application startup.","timestamp":"2026-03-26T12:54:14.431Z"}
+
+data: {"data":"INFO:     Application startup complete.","timestamp":"2026-03-26T12:54:14.578Z"}
+
+data: {"data":"INFO:     Uvicorn running on http://0.0.0.0:7860 (Press CTRL+C to quit)","timestamp":"2026-03-26T12:54:14.578Z"}
+

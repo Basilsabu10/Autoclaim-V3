@@ -20,6 +20,7 @@ function SubmitClaim() {
         frontImage: null,
         photos: [],
         documents: [],
+        gdEntry: null,
     });
 
     const steps = [
@@ -78,6 +79,22 @@ function SubmitClaim() {
         }
     };
 
+    const handleGdEntryUpload = (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+            if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+                alert(`GD Entry file "${file.name}" exceeds ${MAX_FILE_SIZE_MB}MB limit. Please choose a smaller file.`);
+                e.target.value = "";
+                return;
+            }
+            setFormData((prev) => ({ ...prev, gdEntry: file }));
+        }
+    };
+
+    const removeGdEntry = () => {
+        setFormData((prev) => ({ ...prev, gdEntry: null }));
+    };
+
     const removePhoto = (index) => {
         setFormData((prev) => ({
             ...prev,
@@ -108,7 +125,7 @@ function SubmitClaim() {
             case "photos":
                 return formData.frontImage && formData.photos.length > 0;
             case "documents":
-                return true; // documents are optional
+                return !!formData.gdEntry; // GD Entry is required
             case "review":
                 return true;
             default:
@@ -168,6 +185,11 @@ ${formData.description}`;
             formData.photos.forEach((photo) => {
                 data.append("images", photo);
             });
+
+            // Add GD Entry document (required)
+            if (formData.gdEntry) {
+                data.append("gd_entry", formData.gdEntry);
+            }
 
             // Add first document as estimate_bill if exists
             if (formData.documents.length > 0) {
@@ -291,7 +313,7 @@ ${formData.description}`;
                                 {currentStep === "photos" &&
                                     "Upload clear photos of the damage and accident scene."}
                                 {currentStep === "documents" &&
-                                    "Attach supporting documents such as bills or reports (optional)."}
+                                    "Upload the required GD Entry document and any optional supporting documents."}
                                 {currentStep === "review" &&
                                     "Review all details before submitting your claim."}
                             </p>
@@ -502,6 +524,38 @@ ${formData.description}`;
                                 {/* Documents step */}
                                 {currentStep === "documents" && (
                                     <>
+                                        {/* GD Entry Upload — Required */}
+                                        <div className="mb-4">
+                                            <label className="form-label fw-bold">
+                                                📋 GD Entry Document *
+                                            </label>
+                                            <input
+                                                type="file"
+                                                className="form-control"
+                                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                                onChange={handleGdEntryUpload}
+                                            />
+                                            <small className="text-muted">
+                                                Upload the GD (General Diary) Entry document. This is required to proceed.
+                                            </small>
+
+                                            {formData.gdEntry && (
+                                                <div className="mt-2 d-flex align-items-center gap-2">
+                                                    <span className="badge bg-success">✓ {formData.gdEntry.name}</span>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-sm btn-outline-danger"
+                                                        onClick={removeGdEntry}
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <hr className="my-4" />
+
+                                        {/* Optional Supporting Documents */}
                                         <div className="mb-3">
                                             <label className="form-label">
                                                 Upload Supporting Documents (optional)
@@ -554,6 +608,11 @@ ${formData.description}`;
                                         <div className="submit-review-block mb-3">
                                             <h5>Accident Description</h5>
                                             <p>{formData.description || "-"}</p>
+                                        </div>
+
+                                        <div className="submit-review-block mb-3">
+                                            <h5>GD Entry</h5>
+                                            <p>{formData.gdEntry ? `✅ ${formData.gdEntry.name}` : "❌ Not uploaded"}</p>
                                         </div>
 
                                         <div className="row g-3">

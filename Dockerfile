@@ -27,7 +27,14 @@ WORKDIR /app
 # Set YOLO config dir to a writable path (avoids /root/.config/Ultralytics warning)
 ENV YOLO_CONFIG_DIR=/tmp
 
-# Copy and install full requirements (torch + YOLO + EasyOCR included)
+# ── CPU-only PyTorch (saves ~1.5 GB vs CUDA bundle) ──────────
+# Install torch+torchvision from the CPU-only index FIRST,
+# so the main requirements.txt skips the huge CUDA wheels.
+RUN pip install --no-cache-dir \
+  torch==2.7.1+cpu torchvision==0.22.1+cpu \
+  --index-url https://download.pytorch.org/whl/cpu
+
+# Copy and install remaining requirements (torch already satisfied)
 COPY Autoclaim-V3/autoclaim_project/server/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

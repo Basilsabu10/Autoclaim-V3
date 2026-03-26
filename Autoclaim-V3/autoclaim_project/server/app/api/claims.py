@@ -87,6 +87,7 @@ async def upload_claim(
     images: List[UploadFile] = File(default=[]),
     front_image: Optional[UploadFile] = File(default=None),
     estimate_bill: Optional[UploadFile] = File(default=None),
+    gd_entry: Optional[UploadFile] = File(default=None),
     background_tasks: BackgroundTasks = None,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -121,6 +122,9 @@ async def upload_claim(
     estimate_bill_path, _ = (
         await save_upload_file(estimate_bill, "bill_") if estimate_bill else (None, None)
     )
+    gd_entry_path, _ = (
+        await save_upload_file(gd_entry, "gdentry_") if gd_entry else (None, None)
+    )
     if front_image_path and front_orig:
         original_filenames[front_image_path] = front_orig
     
@@ -146,6 +150,7 @@ async def upload_claim(
         image_paths=saved_image_paths,
         front_image_path=front_image_path,
         estimate_bill_path=estimate_bill_path,
+        gd_entry_path=gd_entry_path,
         accident_date=parsed_accident_date,
         status="processing"  # Will be updated by background task
     )
@@ -385,6 +390,7 @@ def get_claim_details(
         "image_paths": [os.path.basename(p) for p in claim.image_paths] if claim.image_paths else [],
         "front_image_path": os.path.basename(claim.front_image_path) if claim.front_image_path else None,
         "estimate_bill_path": os.path.basename(claim.estimate_bill_path) if claim.estimate_bill_path else None,
+        "gd_entry_path": os.path.basename(claim.gd_entry_path) if claim.gd_entry_path else None,
         "status": claim.status,
         "created_at": claim.created_at.isoformat(),
         "decision_date": claim.decision_date.isoformat() if hasattr(claim, 'decision_date') and claim.decision_date else None,
@@ -859,6 +865,8 @@ def delete_claim(
             file_paths.append(claim.front_image_path)
         if claim.estimate_bill_path:
             file_paths.append(claim.estimate_bill_path)
+        if claim.gd_entry_path:
+            file_paths.append(claim.gd_entry_path)
         for doc in db.query(models.ClaimDocument).filter(models.ClaimDocument.claim_id == claim_id).all():
             file_paths.append(doc.file_path)
 

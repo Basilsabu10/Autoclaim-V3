@@ -36,6 +36,23 @@ app.add_middleware(
 # Create database tables (idempotent — only adds missing tables)
 models.Base.metadata.create_all(bind=engine)
 
+# ── Safe column migration ────────────────────────────────────────────────
+# create_all does NOT add new columns to existing tables.
+# This block adds any new columns introduced after initial deployment.
+try:
+    from sqlalchemy import text, inspect as sa_inspect
+    with engine.connect() as conn:
+        inspector = sa_inspect(engine)
+        claims_cols = [c["name"] for c in inspector.get_columns("claims")]
+        if "gd_entry_path" not in claims_cols:
+            conn.execute(text("ALTER TABLE claims ADD COLUMN gd_entry_path VARCHAR"))
+            conn.commit()
+            print("✅ Migration: added gd_entry_path column to claims table")
+        else:
+            print("✅ Migration: gd_entry_path column already exists")
+except Exception as e:
+    print(f"⚠️  Column migration check: {e}")
+
 # Include routers
 app.include_router(auth.router)
 app.include_router(claims.router)

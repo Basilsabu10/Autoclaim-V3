@@ -960,7 +960,7 @@ function ViewClaim() {
                 )}
 
                 {/* Uploaded Images */}
-                {(claim.image_paths?.length > 0 || claim.front_image_path || claim.case_number_image_path || claim.estimate_bill_path) && (
+                {(claim.image_paths?.length > 0 || claim.front_image_path || claim.case_number_image_path || claim.estimate_bill_path || claim.gd_entry_path) && (
                     <div className="claim-card full-width">
                         <h2>📷 Uploaded Files</h2>
 
@@ -1029,6 +1029,23 @@ function ViewClaim() {
                                     <span>📄 {claim.estimate_bill_path.split('/').pop()}</span>
                                     <a
                                         href={`${API_URL}/uploads/${claim.estimate_bill_path.split('/').pop()}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="view-file-btn"
+                                    >
+                                        View File
+                                    </a>
+                                </div>
+                            </div>
+                        )}
+
+                        {claim.gd_entry_path && (
+                            <div className="image-section">
+                                <h3>📋 GD Entry Document</h3>
+                                <div className="file-item">
+                                    <span>📄 {claim.gd_entry_path.split('/').pop()}</span>
+                                    <a
+                                        href={`${API_URL}/uploads/${claim.gd_entry_path.split('/').pop()}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="view-file-btn"
