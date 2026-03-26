@@ -33,6 +33,7 @@ function AdminDashboard() {
     const [rotation, setRotation] = useState(null); // round-robin status
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(null);
+    const [deleting, setDeleting] = useState(null);
     const [togglingAgent, setTogglingAgent] = useState(null);
     const navigate = useNavigate();
 
@@ -105,6 +106,35 @@ function AdminDashboard() {
             console.error("Failed to update status:", error);
         } finally {
             setUpdating(null);
+        }
+    };
+
+    const deleteClaim = async (claimId) => {
+        if (!window.confirm(`⚠️ PERMANENTLY DELETE Claim #${claimId}?\n\nThis will remove the claim and all related data (notes, documents, forensic analysis, notifications).\n\nThis action cannot be undone.`)) return;
+
+        setDeleting(claimId);
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(
+                `${API_URL}/claims/${claimId}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (response.ok) {
+                setClaims(claims.filter(claim => claim.id !== claimId));
+            } else {
+                const data = await response.json();
+                alert("Failed to delete claim: " + (data.detail || "Unknown error"));
+            }
+        } catch (error) {
+            alert("Failed to delete claim: " + error.message);
+        } finally {
+            setDeleting(null);
         }
     };
 
@@ -414,6 +444,13 @@ function AdminDashboard() {
                                                                 disabled={claim.status === "pending" || updating === claim.id}
                                                                 title="Reset to Pending"
                                                             >↺</button>
+                                                            <button
+                                                                className="action-btn reject"
+                                                                onClick={() => deleteClaim(claim.id)}
+                                                                disabled={deleting === claim.id}
+                                                                title="Permanently Delete Claim"
+                                                                style={{ marginLeft: '4px', opacity: deleting === claim.id ? 0.5 : 1 }}
+                                                            >{deleting === claim.id ? '…' : '🗑'}</button>
                                                         </div>
                                                     </td>
                                                 </tr>

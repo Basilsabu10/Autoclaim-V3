@@ -835,6 +835,66 @@ def get_claim_notes(
 
 
 # ─────────────────────────────────────────────────────────────
+# Admin — Delete claim
+# ─────────────────────────────────────────────────────────────
+
+@router.delete("/{claim_id}")
+def delete_claim(
+    claim_id: int,
+    purge_files: bool = Query(False, description="Also delete uploaded files from disk"),
+    current_user: dict = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Permanently delete a claim and all related records (Admin only)."""
+    claim = db.query(models.Claim).filter(models.Claim.id == claim_id).first()
+    if not claim:
+        raise HTTPException(status_code=404, detail="Claim not found")
+
+    # Collect file paths before deletion if purging
+    file_paths = []
+    if purge_files:
+        if claim.image_paths:
+            file_paths.extend(claim.image_paths)
+        if claim.front_image_path:
+            file_paths.append(claim.front_image_path)
+        if claim.estimate_bill_path:
+            file_paths.append(claim.estimate_bill_path)
+        for doc in db.query(models.ClaimDocument).filter(models.ClaimDocument.claim_id == claim_id).all():
+            file_paths.append(doc.file_path)
+
+    # Delete in dependency order (children first)
+    deleted_wallet_txns = db.query(models.WalletTransaction).filter(models.WalletTransaction.claim_id == claim_id).delete()
+    deleted_notifs      = db.query(models.Notification).filter(models.Notification.claim_id == claim_id).delete()
+    deleted_notes       = db.query(models.ClaimNote).filter(models.ClaimNote.claim_id == claim_id).delete()
+    deleted_docs        = db.query(models.ClaimDocument).filter(models.ClaimDocument.claim_id == claim_id).delete()
+    deleted_forensic    = db.query(models.ForensicAnalysis).filter(models.ForensicAnalysis.claim_id == claim_id).delete()
+    db.delete(claim)
+    db.commit()
+
+    # Optionally remove files from disk
+    removed_files = 0
+    if purge_files and file_paths:
+        for path in file_paths:
+            if os.path.exists(path):
+                os.remove(path)
+                removed_files += 1
+
+    print(f"[Admin] Claim #{claim_id} deleted by {current_user['email']}")
+
+    return {
+        "message": f"Claim #{claim_id} permanently deleted",
+        "deleted": {
+            "wallet_transactions": deleted_wallet_txns,
+            "notifications": deleted_notifs,
+            "notes": deleted_notes,
+            "documents": deleted_docs,
+            "forensic_analysis": deleted_forensic,
+            "files_removed": removed_files,
+        },
+    }
+
+
+# ─────────────────────────────────────────────────────────────
 # Feature 8 — Claim assignment to agent
 # ─────────────────────────────────────────────────────────────
 
