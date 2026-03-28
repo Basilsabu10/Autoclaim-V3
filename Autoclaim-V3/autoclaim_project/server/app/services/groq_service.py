@@ -12,7 +12,7 @@ groq_client = None
 GROQ_AVAILABLE = False
 
 def init_groq() -> bool:
-    """Initialize Groq client."""
+    
     global groq_client, GROQ_AVAILABLE
     
     if not settings.GROQ_API_KEY:
@@ -30,7 +30,7 @@ def init_groq() -> bool:
 
 
 def encode_image_base64(image_path: str) -> Optional[str]:
-    """Encode image to base64 with optimal compression."""
+    
     try:
         from PIL import Image
         import io
@@ -63,16 +63,13 @@ def encode_image_base64(image_path: str) -> Optional[str]:
 
 
 def build_extraction_prompt(description: str, policy_data: Optional[Dict] = None) -> str:
-    """
-    Lean prompt for pure data extraction.
-    No fluff, no judgment, just facts.
-    """
+    
     
     policy_info = ""
     if policy_data:
         policy_info = f"\nPolicy: {policy_data.get('vehicle_make')} {policy_data.get('vehicle_model')} {policy_data.get('vehicle_year')}, Color: {policy_data.get('vehicle_color')}, Plate: {policy_data.get('vehicle_registration')}"
     
-    prompt = f"""You are an AI forensics expert. Your task is to detect image integrity issues and verify vehicle identity.
+    prompt = f"""You are an AI forensics expert. Your task is to detect image integrity issues, AI generation, and verify vehicle identity.
 Do not extract damage or license plates (handled by YOLO).
 
 Return data strictly in the JSON schema below. 
@@ -98,7 +95,10 @@ Return ONLY this JSON:
     "multiple_light_sources": true/false,
     "shadows_inconsistent": true/false,
     "airbags_deployed": true/false,
-    "fluid_leaks_visible": true/false
+    "fluid_leaks_visible": true/false,
+    "ai_generated": true/false,
+    "ai_generation_confidence": 0.0,
+    "ai_generation_indicators": ["list of evidence strings e.g. unnaturally smooth surfaces, impossible reflections, missing shadows, uniform noise pattern"]
   }},
   "fraud_analysis": {{
     "fraud_detected": true/false,
@@ -111,9 +111,11 @@ Return ONLY this JSON:
 CRITICAL RULES:
 - Respond with ONLY valid JSON.
 - No damage assessment.
-- Focus on forgery, recapture, and vehicle identity (make, model, color).
+- Focus on forgery, recapture, AI generation, and vehicle identity (make, model, color).
 - For airbags_deployed: true ONLY if you can see deployed airbag fabric/material in the image.
-- For fluid_leaks_visible: true ONLY if you can see liquid pooling, drips, or stains under/around the vehicle."""
+- For fluid_leaks_visible: true ONLY if you can see liquid pooling, drips, or stains under/around the vehicle.
+- For ai_generated: true if the image shows characteristics of Stable Diffusion, DALL-E, Midjourney or similar AI generators (impossibly smooth paint, uncanny reflections, wrong text rendering, uniform noise, missing real camera motion blur).
+- ai_generation_confidence: 0.0 if clearly a real photo, 1.0 if clearly AI-generated."""
     
     return prompt
 

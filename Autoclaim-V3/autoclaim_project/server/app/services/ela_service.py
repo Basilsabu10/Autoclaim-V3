@@ -9,10 +9,7 @@ except ImportError:
     print("[WARNING] Pillow is not installed. ELA Analysis will be disabled.")
 
 def ela_analysis(image_path: str, quality: int = 95) -> Dict[str, Any]:
-    """
-    Perform Error Level Analysis (ELA) to detect image manipulation.
-    Returns the analysis result including manipulation score.
-    """
+    
     if not PIL_AVAILABLE:
         return {"success": False, "error": "Pillow not available"}
         

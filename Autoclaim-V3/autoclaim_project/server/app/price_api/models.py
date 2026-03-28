@@ -5,7 +5,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, UniqueConstraint
 from datetime import datetime
 
-from app.db.models import Base
+from app.db.database import Base
 
 
 class PartPrice(Base):

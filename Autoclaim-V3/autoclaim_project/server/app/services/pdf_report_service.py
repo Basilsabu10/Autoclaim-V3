@@ -178,6 +178,7 @@ def generate_claim_pdf(claim_id: int, db: Session) -> bytes:
             failed_rules=failed_rules, passed_count=passed_count,
             decision=decision, dec_color=dec_color,
             ai_damaged_panels=ai_damaged_panels,
+            db=db,
         )
     except Exception as e:
         import traceback
@@ -193,6 +194,7 @@ def _build_reportlab_pdf(
     claim, user, policy, fa,
     image_paths, repair_cb, failed_rules, passed_count,
     decision, dec_color, ai_damaged_panels,
+    db=None,
 ) -> bytes:
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors

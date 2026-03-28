@@ -14,6 +14,7 @@ from app.db import models
 from app.api import auth, claims
 from app.api import notifications
 from app.api import wallet
+from app.api import clearance
 from app.services import ai_orchestrator
 from app.price_api.router import router as price_router
 
@@ -21,7 +22,7 @@ from app.price_api.router import router as price_router
 app = FastAPI(
     title="AutoClaim API",
     description="Insurance claim processing with AI-powered damage analysis",
-    version="2.0.0"
+    version="3.0.0"
 )
 
 # Enable CORS for React frontend
@@ -36,26 +37,68 @@ app.add_middleware(
 # Create database tables (idempotent — only adds missing tables)
 models.Base.metadata.create_all(bind=engine)
 
-# ── Safe column migration ────────────────────────────────────────────────
-# create_all does NOT add new columns to existing tables.
-# This block adds any new columns introduced after initial deployment.
+# ── Safe column migration (idempotent — runs every startup) ─────────────────
 try:
     from sqlalchemy import text, inspect as sa_inspect
     with engine.connect() as conn:
         inspector = sa_inspect(engine)
         claims_cols = [c["name"] for c in inspector.get_columns("claims")]
+        forensic_cols = [c["name"] for c in inspector.get_columns("forensic_analyses")]
+
+        # Legacy column (pre-v3)
         if "gd_entry_path" not in claims_cols:
             conn.execute(text("ALTER TABLE claims ADD COLUMN gd_entry_path VARCHAR"))
             conn.commit()
-            print("✅ Migration: added gd_entry_path column to claims table")
-        else:
-            print("✅ Migration: gd_entry_path column already exists")
+            print("✅ Migration: added gd_entry_path")
+
+        # v3 Phase 1 — Agent clearance + video session columns
+        clearance_columns = [
+            ("clearance_conducted_at",    "DATETIME"),
+            ("clearance_agent_id",        "INTEGER"),
+            ("agent_document_type",        "VARCHAR"),
+            ("agent_document_number",      "VARCHAR"),
+            ("clearance_notes",            "TEXT"),
+            ("video_session_started_at",   "DATETIME"),  # v3.1 Jitsi session tracking
+        ]
+        for col, coltype in clearance_columns:
+            if col not in claims_cols:
+                conn.execute(text(f"ALTER TABLE claims ADD COLUMN {col} {coltype}"))
+                conn.commit()
+                print(f"✅ Migration: added claims.{col}")
+
+        # v3 Phase 3 — Coverage & payout columns
+        payout_columns = [
+            ("effective_coverage_amount", "INTEGER"),
+            ("payout_rule",              "VARCHAR"),
+            ("payout_amount",            "INTEGER"),
+            ("is_totaled",               "BOOLEAN DEFAULT 0"),
+        ]
+        for col, coltype in payout_columns:
+            if col not in claims_cols:
+                conn.execute(text(f"ALTER TABLE claims ADD COLUMN {col} {coltype}"))
+                conn.commit()
+                print(f"✅ Migration: added claims.{col}")
+
+        # v3 Phase 4 — AI generation detection columns (forensic_analyses)
+        ai_gen_columns = [
+            ("ai_generated_detected",    "BOOLEAN DEFAULT 0"),
+            ("ai_generation_confidence", "FLOAT"),
+            ("ai_generation_indicators", "JSON"),
+        ]
+        for col, coltype in ai_gen_columns:
+            if col not in forensic_cols:
+                conn.execute(text(f"ALTER TABLE forensic_analyses ADD COLUMN {col} {coltype}"))
+                conn.commit()
+                print(f"✅ Migration: added forensic_analyses.{col}")
+
+        print("✅ All v3 migrations complete")
 except Exception as e:
     print(f"⚠️  Column migration check: {e}")
 
 # Include routers
 app.include_router(auth.router)
 app.include_router(claims.router)
+app.include_router(clearance.router)
 app.include_router(notifications.router)
 app.include_router(wallet.router)
 app.include_router(price_router)

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoClaim Rule Verification Engine v2.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f111a;
+            --surface-color: #1a1d27;
+            --surface-color-light: #252a36;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #8b5cf6;
+            
+            --critical-color: #ef4444;
+            --high-color: #f97316;
+            --medium-color: #eab308;
+            --low-color: #3b82f6;
+            --approved-color: #10b981;
+
+            --border-radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+
+        /* Background Decor */
+        .bg-decor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.15;
+            animation: float 20s infinite ease-in-out alternate;
+        }
+
+        .blob-1 {
+            top: -10%;
+            left: -10%;
+            width: 600px;
+            height: 600px;
+            background: var(--accent-primary);
+            animation-delay: 0s;
+        }
+
+        .blob-2 {
+            bottom: -10%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: var(--accent-secondary);
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(50px, 50px) scale(1.1); }
+            100% { transform: translate(-50px, 100px) scale(0.9); }
+        }
+
+        /* Header */
+        header {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(15, 17, 26, 0.8) 0%, var(--bg-color) 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.5), transparent);
+        }
+
+        .title-gradient {
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 3.5rem;
+            letter-spacing: -1px;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.25rem;
+            max-width: 800px;
+            margin: 0 auto;
+            font-weight: 400;
+        }
+
+        /* Main Container */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        /* Section Layout */
+        .section-header {
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.25rem;
+            color: #fff;
+        }
+
+        .section-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--surface-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: transparent;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.1);
+            background: var(--surface-color-light);
+        }
+
+        .card.critical:hover::before { background: var(--critical-color); }
+        .card.high:hover::before { background: var(--high-color); }
+        .card.medium:hover::before { background: var(--medium-color); }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            color: #fff;
+        }
+
+        .rule-id {
+            font-family: monospace;
+            font-size: 0.8rem;
+            background: rgba(255,255,255,0.05);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            color: var(--text-secondary);
+        }
+
+        .card-body {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            flex-grow: 1;
+        }
+
+        /* Tags */
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tag-critical { background: rgba(239, 68, 68, 0.1); color: var(--critical-color); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .tag-high { background: rgba(249, 115, 22, 0.1); color: var(--high-color); border: 1px solid rgba(249, 115, 22, 0.2); }
+        .tag-medium { background: rgba(234, 179, 8, 0.1); color: var(--medium-color); border: 1px solid rgba(234, 179, 8, 0.2); }
+        .tag-low { background: rgba(59, 130, 246, 0.1); color: var(--low-color); border: 1px solid rgba(59, 130, 246, 0.2); }
+        .tag-new { background: rgba(139, 92, 246, 0.1); color: var(--accent-secondary); border: 1px solid rgba(139, 92, 246, 0.2); }
+
+        /* Decision Matrix Matrix */
+        .matrix-container {
+            background: var(--surface-color);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .matrix-container::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            position: relative;
+            z-index: 1;
+            margin-top: 1.5rem;
+        }
+
+        .matrix-item {
+            padding: 1.5rem;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: var(--transition);
+        }
+
+        .matrix-item:hover {
+            transform: scale(1.02);
+        }
+
+        .matrix-item h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-header.approved { color: var(--approved-color); }
+        .status-header.monitored { color: var(--low-color); }
+        .status-header.flagged { color: var(--high-color); }
+        .status-header.rejected { color: var(--critical-color); }
+
+        /* Scoring Info */
+        .scoring-info {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            background: rgba(0,0,0,0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-secondary);
+        }
+
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .score-val {
+            font-size: 1.25rem;
+            color: #fff;
+            font-weight: 700;
+        }
+
+        /* Check Details List */
+        ul.details-list {
+            list-style: none;
+            margin-top: 0.75rem;
+        }
+        ul.details-list li {
+            position: relative;
+            padding-left: 1.25rem;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+        ul.details-list li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--accent-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .title-gradient { font-size: 2.5rem; }
+            .grid { grid-template-columns: 1fr; }
+            .scoring-info { flex-direction: column; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-decor">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <header>
+        <h1 class="title-gradient">Rule Verification Engine v2.0</h1>
+        <p class="subtitle">Deterministic decision logic for auto-claim processing. Every decision is auditable with strict phase-based logic, scoring, and thresholds.</p>
+    </header>
+
+    <main>
+        <!-- Decision Matrix -->
+        <div class="matrix-container">
+            <h2>Decision Matrix & Scoring</h2>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem;">Claims are evaluated deterministically based on absolute rules and an aggregated severity score.</p>
+            
+            <div class="matrix-grid">
+                <div class="matrix-item" style="border-top: 3px solid var(--approved-color)">
+                    <h3 class="status-header approved">APPROVED</h3>
+                    <p>No failures, OR only LOW severity issues (score < 2).</p>
+                    <p style="margin-top: 0.5rem; font-size: 0.8rem; opacity: 0.8;">Auto-approved processing.</p>
+                </div>
+                <div class="matrix-item" style="border-top: 3px solid var(--low-color)">
+                    <h3 class="status-header monitored">MONITORED</h3>
+                    <p>Approved but with minor LOW severity flags (score 1).</p>
+                    <p style="margin-top: 0.5rem; font-size: 0.8rem; opacity: 0.8;">Monitored post-processing.</p>
+                </div>
+                <div class="matrix-item" style="border-top: 3px solid var(--high-color)">
+                    <h3 class="status-header flagged">FLAGGED</h3>
+                    <p>Score >= 2 but < 10.</p>
+                    <p style="margin-top: 0.5rem; font-size: 0.8rem; opacity: 0.8;">Requires human review.</p>
+                </div>
+                <div class="matrix-item" style="border-top: 3px solid var(--critical-color)">
+                    <h3 class="status-header rejected">REJECTED</h3>
+                    <p>Any CRITICAL failure, OR score >= 10.</p>
+                    <p style="margin-top: 0.5rem; font-size: 0.8rem; opacity: 0.8;">Auto-rejected for fraud/invalidity.</p>
+                </div>
+            </div>
+
+            <div class="scoring-info">
+                <div class="score-item">
+                    <span>Severity Weights</span>
+                    <span class="score-val">CRITICAL: 10, HIGH: 5, MED: 2, LOW: 1</span>
+                </div>
+                <div class="score-item">
+                    <span>Compounding Multiplier</span>
+                    <span class="score-val">x1.5 (if >= 3 HIGH/CRITICAL fails)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PHASE A -->
+        <div class="section-header">
+            <div class="section-icon">A</div>
+            <h2>Phase A: Integrity & Source Checks</h2>
+        </div>
+        <div class="grid">
+            <div class="card critical">
+                <div class="card-header">
+                    <h3 class="card-title">1. Image Quality Gate</h3>
+                    <span class="rule-id">CHECK_1</span>
+                </div>
+                <div class="card-body">
+                    Blocks severely degraded images early to ensure reliable downstream AI results.
+                    <ul class="details-list">
+                        <li><strong>Screen Recaptures / UI elements:</strong> CRITICAL</li>
+                        <li><strong>Excessively Blurry:</strong> HIGH</li>
+                        <li><strong>Low General Quality:</strong> MEDIUM</li>
+                    </ul>
+                </div>
+                <div class="tags">
+                    <span class="tag tag-new">v2 NEW</span>
+                    <span class="tag tag-critical">Critical</span>
+                </div>
+            </div>
+
+            <div class="card high">
+                <div class="card-header">
+                    <h3 class="card-title">2. Metadata Verification</h3>
+                    <span class="rule-id">CHECK_2</span>
+                </div>
+                <div class="card-body">
+                    Validates the core authenticity of the media via EXIF extraction.
+                    <ul class="details-list">
+                        <li><strong>No EXIF Timestamp:</strong> HIGH (Edited image risk)</li>
+                        <li><strong>GPS Location Mismatch:</strong> MEDIUM</li>
+                        <li><strong>No GPS Data:</strong> LOW</li>
+                    </ul>
+                </div>
+                <div class="tags">
+                    <span class="tag tag-high">High</span>
+                </div>
+            </div>
+
+            <div class="card critical">
+                <div class="card-header">
+                    <h3 class="card-title">3. Reverse Image Search</h3>
+                    <span class="rule-id">CHECK_3</span>
+                </div>
+                <div class="card-body">
+                    Cross-references images across the internet to detect stock photos.
+                    <ul class="details-list">
+                        <li><strong>High/Very High likelihood:</strong> CRITICAL (Stock Photo detected)</li>
+                        <li><strong>Medium likelihood:</strong> MEDIUM</li>
+                    </ul>
+                </div>
+                <div class="tags">
+                    <span class="tag tag-critical">Critical</span>
+                </div>
+            </div>
+
+            <div class="card critical">
+                <div class="card-header">
+                    <h3 class="card-title">4. Digital Forgery Detection</h3>
+                    <span class="rule-id">CHECK_4</span>
+                </div>
+                <div class="card-body">
+                    Analyzes pixels and EXIF anomalies for software tampering.
+                    <ul class="details-list">
+                        <li><strong>ELA manipulation / AI Generation:</strong> CRITICAL</li>
+                        <li><strong>Direct Editing detected:</strong> CRITICAL</li>
+                        <li><strong>Non-uniform compression/Watermarks:</strong> HIGH</li>
+                        <li><strong>Missing Expected EXIF:</strong> MEDIUM</li>
+                    </ul>
+                </div>
+                <div class="tags">
+                    <span class="tag tag-critical">Critical</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PHASE B -->
+        <div class="section-header">
+            <div class="section-icon">B</div>
+            <h2>Phase B: Vehicle & Damage Verification</h2>
+        </div>
+        <div class="grid">
+            <div class="card critical">
+                <div class="card-header">
+                    <h3 class="card-title">5. Vehicle Match</h3>
+                    <span class="rule-id">CHECK_5</span>
+                </div>
+                <div class="card-body">
+                    Validates that the physical car matches the insured plan.
+                    <ul class="details-list">
+                        <li><strong>Brand/Model Mismatch:</strong> CRITICAL (Can be bypassed if exact Plate matches)</li>
+                        <li><strong>Low Confidence Identity:</strong> MEDIUM</li>
+                        <li><strong>Color Mismatch:</strong> MEDIUM</li>
+                    </ul>
+                </div>
+                <div class="tags"><span class="tag tag-critical">Critical</span></div>
+            </div>
+
+            <div class="card critical">
+                <div class="card-header">
+                    <h3 class="card-title">6. License Plate Match</h3>
+                    <span class="rule-id">CHECK_6</span>
+                </div>
+                <div class="card-body">
+                    Strict, exact OCR string matching against policy registration.
+                    <ul class="details-list">
+                        <li><strong>Plate text mismatch:</strong> CRITICAL</li>
+                        <li><strong>Plate not detected:</strong> HIGH (Medium if obscured)</li>
+                        <li><strong>Low OCR Confidence:</strong> MEDIUM (&lt; 80%)</li>
+                    </ul>
+                </div>
+                <div class="tags"><span class="tag tag-critical">Critical</span></div>
+            </div>
+
+            <div class="card high">
+                <div class="card-header">
+                    <h3 class="card-title">7. Chase/VIN Verification</h3>
+                    <span class="rule-id">CHECK_7</span>
+                </div>
+                <div class="card-body">
+                    Checks VIN/Chase number if visible and provided.
+                    <ul class="details-list">
+                        <li><strong>Chase number mismatch:</strong> HIGH</li>
+                        <li><strong>Low Confidence OCR:</strong> MEDIUM (&lt; 75%)</li>
+                    </ul>
+                </div>
+                <div class="tags"><span class="tag tag-high">High</span></div>
+            </div>
+
+            <div class="card high">
+                <div class="card-header">
+                    <h3 class="card-title">8. Pre-Existing Damage</h3>
+                    <span class="rule-id">CHECK_8</span>
+                </div>
+                <div class="card-body">
+                    Detects visual indicators of long-term wear vs fresh damage.
+                    <ul class="details-list">
+                        <li><strong>Rust in damaged area:</strong> HIGH</li>
+                        <li><strong>Evidence of previous repairs:</strong> HIGH</li>
+                    </ul>
+                </div>
+                <div class="tags"><span class="tag tag-high">High</span></div>
+            </div>
+
+            <div class="card critical">
+                <div class="card-header">
+                    <h3 class="card-title">9. YOLO Damage Req.</h3>
+                    <span class="rule-id">CHECK_9</span>
+                </div>
+                <div class="card-body">
+                    Forces core verification from semantic segmentation model.
+                    <ul class="details-list">
+                        <li><strong>YOLO Model found 0 damage:</strong> CRITICAL (Stops fraudulent non-damaged claims early).</li>
+                    </ul>
+                </div>
+                <div class="tags"><span class="tag tag-new">v2 NEW</span><span class="tag tag-critical">Critical</span></div>
+            </div>
+
+            <div class="card high">
+                <div class="card-header">
+                    <h3 class="card-title">10. Totalled Markers</h3>
+                    <span class="rule-id">CHECK_10</span>
+                </div>
+                <div class="card-body">
+                    Ensures "Totaled" severity calls are backed by physical evidence.
+                    <ul class="details-list">
+                        <li><strong>Totaled (&gt;95%) but NO physical markers (airbags/fluids/missing parts):</strong> HIGH (Likely severity inflation)</li>
+                    </ul>
+                </div>
+                <div class="tags"><span class="tag tag-new">v2 NEW</span><span class="tag tag-high">High</span></div>
+            </div>
+        </div>
+
+        <!-- PHASE C -->
+        <div class="section-header">
+            <div class="section-icon">C</div>
+            <h2>Phase C: Contextual Consistency</h2>
+        </div>
+        <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));">
+            <div class="card high">
+                <div class="card-header">
+                    <h3 class="card-title">11. Narrative Consistency</h3>
+                    <span class="rule-id">CHECK_11</span>
+                </div>
+                <div class="card-body">
+                    Analyzes NLP correspondence between user-provided accident description and AI-extracted physical evidence.
+                    <ul class="details-list">
+                        <li><strong>Narrative inconsistent with evidence:</strong> HIGH</li>
+                    </ul>
+                </div>
+                <div class="tags"><span class="tag tag-high">High</span></div>
+            </div>
+
+            <div class="card high">
+                <div class="card-header">
+                    <h3 class="card-title">12. Multi-Image Consistency</h3>
+                    <span class="rule-id">CHECK_12</span>
+                </div>
+                <div class="card-body">
+                    Checks temporal and spatial continuity across multiple submitted photos of the same incident.
+                    <ul class="details-list">
+                        <li><strong>Different plates/vehicles across images:</strong> HIGH</li>
+                        <li><strong>Contradictory damage/lighting across images:</strong> HIGH</li>
+                    </ul>
+                </div>
+                <div class="tags"><span class="tag tag-new">v2 NEW</span><span class="tag tag-high">High</span></div>
+            </div>
+        </div>
+
+        <!-- PHASE D -->
+        <div class="section-header">
+            <div class="section-icon">D</div>
+            <h2>Phase D: Financial Sanity</h2>
+        </div>
+        <div class="grid">
+            <div class="card medium">
+                <div class="card-header">
+                    <h3 class="card-title">13. Amount Threshold</h3>
+                    <span class="rule-id">CHECK_13</span>
+                </div>
+                <div class="card-body">
+                    Evaluates if the claim value exceeds safe auto-adjudication thresholds.
+                    <ul class="details-list">
+                        <li><strong>Claim > Auto-Approval Limit (₹20,000):</strong> MEDIUM (Forces human review for large payouts)</li>
+                    </ul>
+                </div>
+                <div class="tags"><span class="tag tag-medium">Medium</span></div>
+            </div>
+
+            <div class="card critical">
+                <div class="card-header">
+                    <h3 class="card-title">14. Damage-Cost Sanity</h3>
+                    <span class="rule-id">CHECK_14</span>
+                </div>
+                <div class="card-body">
+                    Cross-validates claimed amount against the algorithmic cost range.
+                    <ul class="details-list">
+                        <li><strong>Claim > 0 but NO damage:</strong> CRITICAL</li>
+                        <li><strong>Claim > AI Max × 2 (Inflated):</strong> HIGH</li>
+                        <li><strong>Claim < AI Min / 2 (Under-declared):</strong> LOW</li>
+                    </ul>
+                </div>
+                <div class="tags"><span class="tag tag-new">v2 NEW</span><span class="tag tag-critical">Critical</span></div>
+            </div>
+        </div>
+
+        <!-- PHASE E -->
+        <div class="section-header">
+            <div class="section-icon">E</div>
+            <h2>Phase E: Policy & History Validation</h2>
+        </div>
+        <div class="grid">
+            <div class="card critical">
+                <div class="card-header">
+                    <h3 class="card-title">15. Policy & Coverage Gate</h3>
+                    <span class="rule-id">CHECK_15</span>
+                </div>
+                <div class="card-body">
+                    Hard database validations against the user's active plan.
+                    <ul class="details-list">
+                        <li><strong>Policy not Active:</strong> CRITICAL</li>
+                        <li><strong>Incident outside coverage dates:</strong> CRITICAL</li>
+                        <li><strong>Claim Amount > Policy Limit:</strong> MEDIUM</li>
+                    </ul>
+                </div>
+                <div class="tags"><span class="tag tag-new">v2 NEW</span><span class="tag tag-critical">Critical</span></div>
+            </div>
+
+            <div class="card critical">
+                <div class="card-header">
+                    <h3 class="card-title">16. Duplicate Guard</h3>
+                    <span class="rule-id">CHECK_16</span>
+                </div>
+                <div class="card-body">
+                    Extensive checks against the database for repeat claims, open disputes, or identical photo hashes (fraud rings).
+                    <ul class="details-list">
+                        <li><strong>Cryptographic Image Hash Collision:</strong> CRITICAL</li>
+                        <li><strong>Policy has existing Open Claim:</strong> HIGH</li>
+                        <li><strong>Same Plate within 30 days:</strong> HIGH</li>
+                    </ul>
+                </div>
+                <div class="tags"><span class="tag tag-new">v2.4 NEW</span><span class="tag tag-critical">Critical</span></div>
+            </div>
+
+            <div class="card high">
+                <div class="card-header">
+                    <h3 class="card-title">17. Accident Date</h3>
+                    <span class="rule-id">CHECK_17</span>
+                </div>
+                <div class="card-body">
+                    Verifies temporal distance between the reported accident and photographic evidence.
+                    <ul class="details-list">
+                        <li><strong>EXIF Capture Date > 14 days from declared accident:</strong> HIGH</li>
+                    </ul>
+                </div>
+                <div class="tags"><span class="tag tag-new">v2 NEW</span><span class="tag tag-high">High</span></div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer style="text-align: center; padding: 2rem; color: var(--text-secondary); border-top: 1px solid rgba(255,255,255,0.05); margin-top: 2rem;">
+        <p>AutoClaim Rule Verification Engine &copy; 2026</p>
+    </footer>
+
+</body>
+</html>

@@ -142,54 +142,63 @@ async def upload_claim(
         except ValueError:
             pass  # Ignore invalid date format
     
-    # Create claim with 'processing' status
+    # Create claim with 'pending_clearance' status (v3 FSM).
+    # Images are stored immediately so the AI pipeline can run as soon as the
+    # agent issues clearance — no second upload step required.
     new_claim = models.Claim(
         user_id=user.id,
         policy_id=active_policy.id if active_policy else None,
         description=description,
-        image_paths=saved_image_paths,
-        front_image_path=front_image_path,
+        image_paths=saved_image_paths,      # stored now, analysed after clearance
+        front_image_path=front_image_path,  # stored now, analysed after clearance
         estimate_bill_path=estimate_bill_path,
         gd_entry_path=gd_entry_path,
         accident_date=parsed_accident_date,
-        status="processing"  # Will be updated by background task
+        status="pending_clearance",  # v3: agent must clear before AI pipeline runs
     )
     db.add(new_claim)
     db.commit()
     db.refresh(new_claim)
-    
-    # Schedule AI analysis as background task
-    if AI_AVAILABLE and background_tasks:
-        from app.services.background_tasks import process_claim_ai_analysis
-        
-        background_tasks.add_task(
-            process_claim_ai_analysis,
-            claim_id=new_claim.id,
-            damage_image_paths=saved_image_paths,
-            front_image_path=front_image_path,
-            description=description,
-            original_filenames=original_filenames
-        )
-        print(f"[API] Claim {new_claim.id} submitted. AI analysis scheduled in background.")
-    else:
-        # No AI available, set status to pending
-        new_claim.status = "pending"
-        db.commit()
-        print(f"[API] Claim {new_claim.id} submitted. AI service not available.")
-    
+
+    # Notify assigned agent automatically (auto-assign on submission)
+    agent_assigned = None
+    if AI_AVAILABLE:
+        try:
+            from app.services.auto_assignment_service import assign_claim_to_agent
+            agent = assign_claim_to_agent(claim_id=new_claim.id, db=db)
+            if agent:
+                new_claim.assigned_agent_id = agent.id
+                new_claim.assignment_method = "auto"
+                db.add(models.Notification(
+                    user_id=agent.id,
+                    claim_id=new_claim.id,
+                    message=(
+                        f"📋 Claim #{new_claim.id} has been assigned to you for clearance. "
+                        f"Please conduct the video verification session with the claimant."
+                    ),
+                ))
+                db.commit()
+                agent_assigned = agent.name or agent.email
+        except Exception as assign_err:
+            print(f"[API] Auto-assign on submit failed: {assign_err}")
+
+    print(
+        f"[API] Claim {new_claim.id} submitted with {len(saved_image_paths)} image(s). "
+        f"Awaiting agent clearance before AI analysis."
+    )
+
     # Return immediate response
     return {
         "status": "success",
-        "message": "Claim submitted successfully. AI analysis in progress.",
+        "message": "Claim submitted successfully. An agent will conduct video verification and then AI analysis will begin automatically.",
         "claim_id": new_claim.id,
         "data": {
             "description": description,
-            "images_count": len(saved_image_paths),
-            "front_image": front_image_path is not None,
-            "estimate_bill": estimate_bill_path is not None,
+            "images_received": len(saved_image_paths),
             "status": new_claim.status,
             "created_at": new_claim.created_at.isoformat(),
-            "note": "AI analysis is being processed in the background. Check claim status later for results."
+            "assigned_agent": agent_assigned,
+            "note": "Your claim is pending agent video clearance. AI analysis will start automatically once cleared."
         }
     }
 
@@ -217,18 +226,117 @@ def get_my_claims(
                 "description": claim.description[:100] + "..." if claim.description and len(claim.description) > 100 else claim.description,
                 "images_count": len(claim.image_paths) if claim.image_paths else 0,
                 "status": claim.status,
+                "can_upload_images": claim.status == "cleared",
                 "created_at": claim.created_at.isoformat(),
                 "vehicle_number_plate": claim.vehicle_number_plate,
                 "ai_recommendation": claim.ai_recommendation,
                 "estimated_cost_min": claim.estimated_cost_min,
-                "estimated_cost_max": claim.estimated_cost_max
+                "estimated_cost_max": claim.estimated_cost_max,
+                "payout_amount": claim.payout_amount,
+                "is_totaled": claim.is_totaled,
             }
             for claim in claims
         ]
     }
 
 
+@router.post("/{claim_id}/submit-images")
+async def submit_claim_images(
+    claim_id: int,
+    images: List[UploadFile] = File(default=[]),
+    front_image: Optional[UploadFile] = File(default=None),
+    background_tasks: BackgroundTasks = None,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Phase 2 — Upload damage images after agent clearance.
+
+    This is the second step in the v3 claim flow:
+      Step 1: POST /claims       → creates claim (pending_clearance)
+      Step 2: Agent clears       → POST /claims/{id}/clear (cleared)
+      Step 3: User uploads here  → POST /claims/{id}/submit-images (triggers AI)
+
+    Enforces: claim.status == "cleared" before accepting images.
+    """
+    claim = db.query(models.Claim).filter(models.Claim.id == claim_id).first()
+    if not claim:
+        raise HTTPException(status_code=404, detail="Claim not found")
+
+    # Ownership check
+    user = db.query(models.User).filter(models.User.email == current_user["email"]).first()
+    if current_user["role"] == "user" and claim.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # FSM gate — images only accepted in CLEARED state
+    if claim.status != "cleared":
+        status_hints = {
+            "pending_clearance": "Your claim is awaiting agent clearance before you can upload images.",
+            "submitted":         "Images already submitted for this claim.",
+            "processing":        "AI analysis already in progress.",
+            "approved":          "This claim has already been approved.",
+            "rejected":          "This claim has been rejected.",
+        }
+        raise HTTPException(
+            status_code=400,
+            detail=status_hints.get(
+                claim.status,
+                f"Cannot upload images in current state: {claim.status}"
+            ),
+        )
+
+    if not images and not front_image:
+        raise HTTPException(status_code=422, detail="At least one damage image is required.")
+
+    # Save images
+    saved_image_paths = []
+    original_filenames: dict = {}
+    for image in images:
+        path, orig_name = await save_upload_file(image, "damage_")
+        if path:
+            saved_image_paths.append(path)
+            if orig_name:
+                original_filenames[path] = orig_name
+
+    front_image_path, front_orig = (
+        await save_upload_file(front_image, "front_") if front_image else (None, None)
+    )
+    if front_image_path and front_orig:
+        original_filenames[front_image_path] = front_orig
+
+    # Attach images to claim and advance status
+    claim.image_paths = saved_image_paths
+    claim.front_image_path = front_image_path
+    claim.status = "submitted"
+    db.commit()
+
+    # Schedule AI analysis
+    if AI_AVAILABLE and background_tasks:
+        from app.services.background_tasks import process_claim_ai_analysis
+        background_tasks.add_task(
+            process_claim_ai_analysis,
+            claim_id=claim.id,
+            damage_image_paths=saved_image_paths,
+            front_image_path=front_image_path,
+            description=claim.description,
+            original_filenames=original_filenames,
+        )
+        print(f"[API] Claim {claim.id} images submitted. AI analysis scheduled.")
+    else:
+        claim.status = "pending"
+        db.commit()
+
+    return {
+        "status": "success",
+        "message": "Images submitted successfully. AI analysis is now running.",
+        "claim_id": claim.id,
+        "images_count": len(saved_image_paths),
+        "status_after": claim.status,
+    }
+
+
 @router.get("/all")
+
 def get_all_claims(
     current_user: dict = Depends(require_agent_or_admin),
     db: Session = Depends(get_db)
@@ -336,6 +444,25 @@ def get_claim_details(
     if current_user["role"] not in ["admin", "agent"] and claim.user_id != user.id:
         raise HTTPException(status_code=403, detail="Access denied")
     
+    # Fetch clearance snapshots
+    snapshots = (
+        db.query(models.ClaimDocument)
+        .filter(
+            models.ClaimDocument.claim_id == claim_id,
+            models.ClaimDocument.label.like("clearance_%"),
+        )
+        .all()
+    )
+    snapshot_list = [
+        {
+            "id": s.id,
+            "label": s.label,
+            "file_path": os.path.basename(s.file_path),
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+        }
+        for s in snapshots
+    ]
+    
     # Build forensic data if available
     forensic_data = None
     if claim.forensic_analysis:
@@ -392,12 +519,27 @@ def get_claim_details(
         "estimate_bill_path": os.path.basename(claim.estimate_bill_path) if claim.estimate_bill_path else None,
         "gd_entry_path": os.path.basename(claim.gd_entry_path) if claim.gd_entry_path else None,
         "status": claim.status,
+        "can_upload_images": claim.status == "cleared",
         "created_at": claim.created_at.isoformat(),
         "decision_date": claim.decision_date.isoformat() if hasattr(claim, 'decision_date') and claim.decision_date else None,
         "vehicle_number_plate": claim.vehicle_number_plate,
         "ai_recommendation": claim.ai_recommendation,
         "estimated_cost_min": claim.estimated_cost_min,
         "estimated_cost_max": claim.estimated_cost_max,
+        # v3 payout fields
+        "effective_coverage_amount": claim.effective_coverage_amount,
+        "payout_rule": claim.payout_rule,
+        "payout_amount": claim.payout_amount,
+        "is_totaled": claim.is_totaled,
+        # v3 clearance fields (only shown to agents/admins or the owning user)
+        "clearance": {
+            "conducted_at": claim.clearance_conducted_at.isoformat() if claim.clearance_conducted_at else None,
+            "document_type": claim.agent_document_type,
+            # document_number shown to agents/admins only
+            "document_number": claim.agent_document_number if current_user["role"] in ("agent", "admin") else None,
+            "notes": claim.clearance_notes,
+            "snapshots": snapshot_list,
+        },
         "forensic_analysis": forensic_data
     }
 
@@ -410,8 +552,8 @@ def update_claim_status(
     db: Session = Depends(get_db)
 ):
     """Update claim status (Agent/Admin only). Creates an in-app notification for the user."""
-    if new_status not in ["pending", "approved", "rejected"]:
-        raise HTTPException(status_code=400, detail="Invalid status. Use: pending, approved, rejected")
+    if new_status not in ["pending", "approved", "rejected", "pending_clearance", "cleared", "submitted", "flagged"]:
+        raise HTTPException(status_code=400, detail="Invalid status. Use: pending, approved, rejected, flagged, pending_clearance, cleared, submitted")
 
     claim = db.query(models.Claim).filter(models.Claim.id == claim_id).first()
     if not claim:
@@ -661,8 +803,16 @@ def reanalyze_claim(
         else:
             db.add(models.ForensicAnalysis(claim_id=claim_id, **forensic_fields))
 
-        # ── Auto-approve or set pending based on verification result ────────
+        # ── Auto-approve, auto-reject, or set pending based on verification ──
         _vr = ai_result.get("verification", {})
+        _vr_status = (_vr.get("status") or "").upper()
+
+        # Totaled vehicles cannot be auto-approved — require agent decision
+        if claim.is_totaled and _vr.get("auto_approved", False):
+            _vr["auto_approved"] = False
+            claim.ai_recommendation = "FLAGGED"
+            print(f"[ReAnalyze] ⚠ Claim {claim_id} TOTALED — blocked auto-approval")
+
         if _vr.get("auto_approved", False):
             claim.status = "approved"
             claim.decision_date = datetime.utcnow()
@@ -671,8 +821,6 @@ def reanalyze_claim(
                 claim_id=claim_id,
                 message=f"🎉 Your Claim #{claim_id} has been automatically approved!",
             ))
-            
-            # Feature: Wallet Credit on Auto-Approval
             amount = claim.estimated_cost_max or claim.estimated_cost_min or 0.0
             if amount > 0:
                 credit_wallet(
@@ -680,15 +828,26 @@ def reanalyze_claim(
                     amount=amount,
                     claim_id=claim.id,
                     db=db,
-                    description=f"Claim #{claim.id} auto-approved — repair cost credited"
+                    description=f"Claim #{claim.id} re-analyzed & auto-approved — repair cost credited"
                 )
-                
             print(f"[ReAnalyze] ✅ Claim {claim_id} AUTO-APPROVED (score={_vr.get('severity_score', 0)})")
+
+        elif _vr_status == "REJECTED":
+            claim.status = "rejected"
+            claim.decision_date = datetime.utcnow()
+            db.add(models.Notification(
+                user_id=claim.user_id,
+                claim_id=claim_id,
+                message=f"❌ Your Claim #{claim_id} has been automatically rejected due to critical issues detected during re-analysis.",
+            ))
+            print(f"[ReAnalyze] ❌ Claim {claim_id} AUTO-REJECTED "
+                  f"(reason={_vr.get('decision_reason', '')[:80]}, score={_vr.get('severity_score', 0)})")
+
         else:
             claim.status = "pending"
             print(f"[ReAnalyze] ⏳ Claim {claim_id} set to pending for human review "
-                  f"(status={_vr.get('status')}, score={_vr.get('severity_score', 0)})")
-        # ─────────────────────────────────────────────────────────────────
+                  f"(status={_vr_status}, score={_vr.get('severity_score', 0)})")
+        # ──────────────────────────────────────────────────────────────────────
         db.commit()
 
         # ── Auto-assign if not already assigned ──────────────────────────────
@@ -995,7 +1154,9 @@ def get_admin_stats(
     total = len(all_claims)
     approved = sum(1 for c in all_claims if c.status == "approved")
     rejected = sum(1 for c in all_claims if c.status == "rejected")
-    pending = sum(1 for c in all_claims if c.status in ["pending", "processing"])
+    pending = sum(1 for c in all_claims if c.status in ["pending", "processing", "submitted"])
+    pending_clearance = sum(1 for c in all_claims if c.status == "pending_clearance")
+    cleared = sum(1 for c in all_claims if c.status == "cleared")
 
     # Claims per day (last 30 days)
     from collections import defaultdict

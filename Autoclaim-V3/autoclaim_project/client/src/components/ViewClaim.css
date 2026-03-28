@@ -498,3 +498,306 @@
         height: 150px;
     }
 }
+
+/* ===========================================
+   Video Verification Panel
+   =========================================== */
+
+.vv-panel {
+    padding: 0 !important;
+    overflow: hidden;
+    border: 2px solid #3b6ea5 !important;
+    box-shadow: 0 8px 32px rgba(30, 46, 63, 0.22) !important;
+}
+
+.vv-header {
+    background: linear-gradient(135deg, #1e2e3f 0%, #2d4a6b 60%, #3b6ea5 100%);
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.vv-title-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.vv-icon {
+    font-size: 2rem;
+    filter: drop-shadow(0 0 8px rgba(115, 146, 183, 0.6));
+}
+
+.vv-live-badge {
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 800;
+    padding: 5px 12px;
+    border-radius: 999px;
+    letter-spacing: 1px;
+    animation: vv-pulse 1.4s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(220, 38, 38, 0.5);
+    white-space: nowrap;
+}
+
+@keyframes vv-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.65; }
+}
+
+/* Steps layout */
+.vv-step {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.vv-step:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.vv-step-num {
+    min-width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b6ea5, #7392B7);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(59, 110, 165, 0.4);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.vv-step-num-final {
+    background: linear-gradient(135deg, #15803d, #22c55e) !important;
+    box-shadow: 0 2px 8px rgba(21, 128, 61, 0.4) !important;
+}
+
+.vv-step-label {
+    font-weight: 700;
+    color: #1e2e3f;
+    font-size: 0.95rem;
+    margin: 0 0 10px;
+}
+
+/* Jitsi iframe */
+.vv-iframe-wrapper {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid #c4d0de;
+    box-shadow: 0 4px 20px rgba(30, 46, 63, 0.15);
+    background: #000;
+}
+
+.vv-iframe {
+    width: 100%;
+    height: 520px;
+    border: none;
+    display: block;
+}
+
+/* Snapshot row */
+.vv-snapshot-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.vv-snap-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.vv-saved-badge {
+    font-size: 0.72rem;
+    color: #15803d;
+    font-weight: 700;
+    background: #dcfce7;
+    border: 1px solid #bbf7d0;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+/* Generic VV button */
+.vv-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 9px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.22s ease;
+}
+
+.vv-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Primary — Start Video */
+.vv-btn-primary {
+    background: linear-gradient(135deg, #1e2e3f 0%, #3b6ea5 100%);
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(30, 46, 63, 0.3);
+}
+
+.vv-btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(30, 46, 63, 0.4);
+}
+
+/* Rejoin state */
+.vv-btn-rejoin {
+    background: linear-gradient(135deg, #2d4a6b 0%, #7392B7 100%);
+}
+
+/* Snapshot buttons */
+.vv-btn-snap {
+    background: #f1f5f9;
+    color: #1e2e3f;
+    border: 1.5px solid #c4d0de;
+    padding: 9px 16px;
+    font-size: 0.85rem;
+}
+
+.vv-btn-snap:hover:not(:disabled) {
+    background: #e2e8f0;
+    border-color: #7392B7;
+    transform: translateY(-1px);
+}
+
+/* Saved state for snapshot */
+.vv-btn-saved {
+    background: #dcfce7 !important;
+    color: #15803d !important;
+    border-color: #86efac !important;
+}
+
+/* Clearance (green) button */
+.vv-btn-clear {
+    background: linear-gradient(135deg, #15803d 0%, #22c55e 100%);
+    color: #fff;
+    padding: 12px 28px;
+    font-size: 0.95rem;
+    box-shadow: 0 3px 12px rgba(21, 128, 61, 0.3);
+    margin-top: 8px;
+}
+
+.vv-btn-clear:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(21, 128, 61, 0.4);
+}
+
+/* Clearance form */
+.vv-form {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 4px;
+}
+
+.vv-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.vv-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.vv-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #3a5a7a;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.vv-select,
+.vv-input {
+    padding: 9px 12px;
+    border: 1.5px solid #c4d0de;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #1e2e3f;
+    background: #fff;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.vv-select:focus,
+.vv-input:focus {
+    outline: none;
+    border-color: #7392B7;
+    box-shadow: 0 0 0 3px rgba(115, 146, 183, 0.15);
+}
+
+.vv-textarea {
+    padding: 9px 12px;
+    border: 1.5px solid #c4d0de;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #1e2e3f;
+    background: #fff;
+    resize: vertical;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.vv-textarea:focus {
+    outline: none;
+    border-color: #7392B7;
+    box-shadow: 0 0 0 3px rgba(115, 146, 183, 0.15);
+}
+
+/* Spinner inside buttons */
+.vv-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .vv-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .vv-snapshot-row {
+        flex-direction: column;
+    }
+
+    .vv-iframe {
+        height: 320px;
+    }
+}

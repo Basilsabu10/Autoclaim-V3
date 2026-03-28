@@ -204,6 +204,7 @@ class VerificationRules:
         self._check_2_metadata_verification(ai_analysis, policy_data)
         self._check_3_reverse_image_search(ai_analysis)
         self._check_4_digital_forgery(ai_analysis)
+        self._check_4_5_sightengine_ai_detection(ai_analysis)
 
         # ── PHASE B: Vehicle & Damage Verification ────────────────────────
         self._check_5_vehicle_match(ai_analysis, policy_data)
@@ -496,6 +497,39 @@ class VerificationRules:
     def _failed_rule_exists(self, rule_id: str) -> bool:
         """Helper to check if a specific rule has already failed."""
         return any(f.rule_id == rule_id for f in self._failed)
+
+    # CHECK 4.5 (NEW): Sightengine AI-Generated Image Detection
+    # ───────────────────────────────────────────────────────
+    def _check_4_5_sightengine_ai_detection(self, ai: Dict[str, Any]) -> None:
+        """
+        Reject claims where Sightengine AI detector flags image as
+        synthetically generated (score > 0.85).
+
+        Severity: CRITICAL — synthetic images nullify all downstream checks.
+        Skips silently if API was not available (success=False).
+        """
+        sight = ai.get("ai_detection", {}) or {}
+
+        if not sight.get("success"):
+            # API not configured or failed — give benefit of the doubt
+            self._pass("SIGHTENGINE_AI_DETECTION_SKIPPED")
+            return
+
+        if sight.get("ai_generated") and float(sight.get("max_ai_score", 0) or 0) > 0.85:
+            score = float(sight.get("max_ai_score", 0))
+            self._fail(
+                rule_id="AI_GENERATED_IMAGE_SIGHTENGINE",
+                rule_name="Sightengine AI-Generated Image Detection (NEW)",
+                reason=(
+                    f"Sightengine AI detector flagged claim image as "
+                    f"synthetically generated (score: {score:.2f}). "
+                    f"Image is highly likely to be AI-generated and not a real photograph."
+                ),
+                severity="CRITICAL",
+                phase="A",
+            )
+        else:
+            self._pass("SIGHTENGINE_AI_DETECTION_OK")
 
     # =========================================================================
     # PHASE B — Vehicle & Damage Verification

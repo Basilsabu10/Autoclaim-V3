@@ -1,12 +1,4 @@
-"""
 
-Pipeline always runs:
-  1. EXIF metadata extraction
-  2. OCR number plate extraction 
-  3. YOLO11m-seg damage + parts segmentation
-  4. Groq data extraction 
-  5. Comprehensive rule-based verification 
-"""
 
 import os
 from datetime import datetime
@@ -18,6 +10,7 @@ from app.core.config import settings
 from app.services.exif_service import extract_metadata
 from app.services.ocr_service import extract_number_plate
 from app.services.ela_service import analyze_claim_images_ela
+from app.services.sightengine_service import analyze_claim_images_sightengine
 
 # Import new YOLO11m-seg service
 try:
@@ -50,12 +43,7 @@ def prepare_verification_data(
     ocr: Dict[str, Any],
     yolo_seg: Dict[str, Any],
 ) -> Dict[str, Any]:
-    """
-    Transform AI extraction results into the format expected by
-    verification_rules.py → VerificationRules.verify_claim().
-
-    Works for both hybrid and yolo_only modes.
-    """
+    
     identity = extracted_data.get("identity", {})
     damage = extracted_data.get("damage", {})
     forensics = extracted_data.get("forensics", {})
@@ -195,6 +183,9 @@ def prepare_verification_data(
 
         # Multi-image Analysis
         "multi_image_analysis": {},
+
+        # HuggingFace AI-generated image detection results
+        "ai_detection": extracted_data.get("ai_detection", {}),
     }
 
     return ai_analysis
@@ -328,6 +319,13 @@ def analyze_claim(
     print("[AI] Running Error Level Analysis (ELA) for image manipulation...")
     ela_res = analyze_claim_images_ela(damage_image_paths)
 
+    # ── 1.6. AI Generation Detection (Sightengine) ──
+    print("[AI] Running Sightengine AI-image detection...")
+    sightengine_res = analyze_claim_images_sightengine(damage_image_paths)
+    print(f"[Sightengine] Result → ai_generated={sightengine_res.get('ai_generated')}, score={sightengine_res.get('max_ai_score')}")
+
+
+
     # ── 2. OCR — try YOLO crop first, then fall back to full image ─────
     if front_image_path and os.path.exists(front_image_path):
         result["ocr"] = extract_number_plate(front_image_path)
@@ -457,6 +455,25 @@ def analyze_claim(
             else:
                 reasoning = ela_msg.strip()
             extraction_result["fraud_analysis"]["reasoning"] = reasoning
+
+    # ── 4.6. Sightengine AI Detection Results Integration ──
+    extraction_result["ai_detection"] = sightengine_res
+    if sightengine_res.get("ai_generated"):
+        extraction_result["fraud_analysis"]["fraud_detected"] = True
+        current_fraud = float(extraction_result["fraud_analysis"].get("fraud_score") or 0.0)
+        extraction_result["fraud_analysis"]["fraud_score"] = max(current_fraud, 0.95)
+        indicators = extraction_result["fraud_analysis"].get("fraud_indicators") or []
+        if "SIGHTENGINE AI GENERATED" not in indicators:
+            indicators.append("SIGHTENGINE AI GENERATED")
+        extraction_result["fraud_analysis"]["fraud_indicators"] = indicators
+        reasoning = extraction_result["fraud_analysis"].get("reasoning") or ""
+        sight_msg = (
+            f" Sightengine AI detector flagged image as synthetic "
+            f"(score: {sightengine_res.get('max_ai_score', 0):.2f})."
+        )
+        extraction_result["fraud_analysis"]["reasoning"] = (reasoning + sight_msg).strip()
+
+
 
     # ── Store extraction results 
     if extraction_result and extraction_result.get("success"):

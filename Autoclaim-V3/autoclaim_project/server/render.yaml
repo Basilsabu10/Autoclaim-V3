@@ -26,7 +26,9 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
-      - key: PRICE_API_URL
+      - key: SIGHTENGINE_API_USER
+        sync: false
+      - key: SIGHTENGINE_API_SECRET
         sync: false
 
   # ─── Price API Sidecar ────────────────────────────────────────

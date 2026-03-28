@@ -27,6 +27,9 @@ class Settings:
     
     # AI Services
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    # Sightengine Integration
+    SIGHTENGINE_API_USER: str = os.getenv("SIGHTENGINE_API_USER", "")
+    SIGHTENGINE_API_SECRET: str = os.getenv("SIGHTENGINE_API_SECRET", "")    
     
     # Groq model (LLaMA 4 Scout Vision)
     GROQ_MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"

@@ -383,13 +383,14 @@ def get_price_estimate_from_api(
     if not price_api_parts:
         return None
 
+    db_res = None
     try:
         from app.price_api.service import build_estimate
         from app.db.database import SessionLocal
 
         db = SessionLocal()
         try:
-            return build_estimate(
+            db_res = build_estimate(
                 db,
                 make=car_make or "Unknown",
                 model=car_model or "Unknown",
@@ -399,5 +400,36 @@ def get_price_estimate_from_api(
             db.close()
 
     except Exception as e:
-        print(f"[PriceAPI] Direct call failed ({type(e).__name__}: {e}) — falling back to static table")
-        return None
+        print(f"[PriceAPI] Direct call failed ({type(e).__name__}: {e})")
+        
+    if db_res and db_res.get("summary", {}).get("recommended_total", 0) > 0:
+        return db_res
+
+    print(f"[PriceAPI] Missing DB prices or call failed — falling back to static table")
+    part_keys = [p.get("part_key") for p in price_api_parts if p.get("part_key")]
+    static_est = estimate_repair_cost(part_keys, car_make, car_model)
+    
+    parts_list = []
+    for item in static_est.get("breakdown", []):
+        parts_list.append({
+            "part_key": item["panel_key"],
+            "damage_type": "unknown",
+            "action": "repair_or_replace",
+            "repair_cost": item["inr_min"],
+            "replacement_cost": item["inr_max"],
+            "recommended_cost": item["inr_max"],
+            "price_source": "static_fallback",
+        })
+        
+    total = sum(r["recommended_cost"] for r in parts_list)
+    return {
+        "vehicle": static_est.get("vehicle_info"),
+        "parts": parts_list,
+        "summary": {
+            "total_parts": len(parts_list),
+            "recommended_total": total,
+            "repair_count": 0,
+            "replace_count": len(parts_list),
+        },
+        "unrecognized_parts": static_est.get("unrecognized_panels", [])
+    }

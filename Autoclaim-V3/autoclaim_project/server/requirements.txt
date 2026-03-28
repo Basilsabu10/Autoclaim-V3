@@ -1,6 +1,25 @@
 # AutoClaim Server — Python Dependencies
-# Generated from venv on 2026-03-12
+# Updated for v3.1.0 (2026-03-28)
 # Install with: pip install -r requirements.txt
+#
+# ── Changelog ─────────────────────────────────────────────────
+# v3.0 — No new packages.
+#   - coverage_calculator.py  → pure stdlib (datetime)
+#   - clearance.py router     → fastapi + sqlalchemy + pydantic (existing)
+#   - groq_service.py upgrade → groq==1.0.0 (existing)
+#
+# v3.1 — No new packages.
+#   - clearance-snapshot API  → base64, uuid, io, os (all stdlib)
+#                               PIL image conversion → pillow==12.1.1 (existing)
+#   - start-video-session API → fastapi + sqlalchemy (existing)
+#   - pdf_report_service.py   → reportlab==4.4.10 (existing)
+#                               clearance snapshot grid added to Page 2
+# ──────────────────────────────────────────────────────────────
+# Frontend (Jitsi Meet):
+#   No npm packages needed.
+#   Uses Jitsi IFrame API via CDN script tag (meet.jit.si/external_api.js)
+#   Snapshot captured via: api.captureLargeVideoScreenshot()
+# ──────────────────────────────────────────────────────────────
 
 # ── Web Framework ─────────────────────────────────────────────
 fastapi==0.129.0
@@ -72,11 +91,9 @@ charset-normalizer==3.4.4
 idna==3.11
 urllib3==2.6.3
 
-# ── HuggingFace ───────────────────────────────────────────────
-huggingface_hub==1.4.1
-hf-xet==1.2.0
-filelock==3.23.0
-fsspec==2026.2.0
+# ── Sightengine ───────────────────────────────────────────────
+# Sightengine uses the standard 'requests' library (listed above)
+# huggingface_hub and its dependencies have been removed.
 
 # ── Config / Env ──────────────────────────────────────────────
 python-dotenv==1.2.1

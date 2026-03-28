@@ -677,6 +677,26 @@
     font-weight: 600;
 }
 
+/* Urgent tab — flashes when there are clearance-pending claims */
+.ud-tab-urgent {
+    border: 1.5px solid rgba(124, 58, 237, 0.5);
+    color: #7c3aed;
+    font-weight: 600;
+    animation: tab-urgent-pulse 1.8s ease-in-out infinite;
+}
+
+.ud-tab-urgent.ud-tab-active {
+    background: #7c3aed;
+    color: #fff;
+    border-color: #7c3aed;
+    animation: none;
+}
+
+@keyframes tab-urgent-pulse {
+    0%, 100% { background: transparent; }
+    50%       { background: rgba(124, 58, 237, 0.08); }
+}
+
 /* Claims list */
 .ud-list {
     padding: 0.75rem;
@@ -786,6 +806,19 @@
     background: rgba(115, 146, 183, 0.15);
     color: #7392B7;
     border: 1px solid rgba(115, 146, 183, 0.3);
+}
+
+/* pending_clearance — video verification needed */
+.ud-status-clearance {
+    background: rgba(124, 58, 237, 0.12);
+    color: #7c3aed;
+    border: 1px solid rgba(124, 58, 237, 0.3);
+    animation: clearance-pulse 2s ease-in-out infinite;
+}
+
+@keyframes clearance-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.7; }
 }
 
 .ud-status-lg {

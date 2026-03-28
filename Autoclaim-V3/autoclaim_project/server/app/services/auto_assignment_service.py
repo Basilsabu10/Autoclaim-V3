@@ -13,13 +13,7 @@ RR_COUNTER_KEY = "rr_last_agent_index"
 
 
 def assign_claim_to_agent(claim_id: int, db: Session) -> Optional[models.User]:
-    """
-    Assign a claim to the next agent in the round-robin rotation.
-
-    Returns the assigned User object, or None if no active agents exist.
-    The DB counter is always updated atomically within the same session
-    — the caller must commit.
-    """
+    
     # Fetch all active agents in stable registration order
     agents = (
         db.query(models.User)
@@ -62,10 +56,7 @@ def assign_claim_to_agent(claim_id: int, db: Session) -> Optional[models.User]:
 
 
 def get_rotation_status(db: Session) -> dict:
-    """
-    Return the current rotation state for the admin UI.
-    Shows which agent is next in the queue.
-    """
+   
     agents = (
         db.query(models.User)
         .filter(

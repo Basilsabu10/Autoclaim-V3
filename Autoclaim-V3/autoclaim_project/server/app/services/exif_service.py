@@ -1,8 +1,4 @@
-"""
-EXIF Metadata Extraction Service.
-Extracts timestamp and GPS location from image EXIF data.
-Falls back to filename parsing when EXIF is not available.
-"""
+
 
 import os
 import re
@@ -24,7 +20,7 @@ geolocator = None
 
 
 def init_geocoder():
-    """Initialize the geocoder for reverse geocoding GPS coordinates."""
+    
     global geolocator
     if GEOCODING_AVAILABLE and geolocator is None:
         try:
@@ -78,19 +74,7 @@ def check_exif_anomalies(image_path: str) -> list[str]:
 
 
 def parse_filename_timestamp(filename: str) -> Dict[str, Any]:
-    """
-    Parse timestamp and camera info from common filename patterns.
     
-    Supports:
-    - Google Pixel: PXL_20250331_091108066.jpg
-    - Samsung: 20250331_091108.jpg or IMG_20250331_091108.jpg
-    - iPhone: IMG_1234.jpg or Photo_2025-03-31
-    - WhatsApp: IMG-20250331-WA0001.jpg
-    - Screenshot: Screenshot_20250331-091108.png
-    
-    Returns:
-        dict with keys: timestamp, camera_type, filename_parsed
-    """
     result = {
         "timestamp": None,
         "camera_type": None,
@@ -139,19 +123,7 @@ def parse_filename_timestamp(filename: str) -> Dict[str, Any]:
 
 
 def extract_metadata(image_path: str, original_filename: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Extract EXIF metadata from an image.
-    Falls back to filename parsing if EXIF is not available.
-
-    Args:
-        image_path: Path to the stored (possibly renamed) image file.
-        original_filename: Optional original filename before upload renaming.
-                           Used in the fallback when the stored filename is a UUID.
-
-    Returns:
-        dict with: timestamp, gps_lat, gps_lon, location_name,
-                   camera_make, camera_model, camera_type, filename_parsed, source
-    """
+    
     init_geocoder()
     
     result = {

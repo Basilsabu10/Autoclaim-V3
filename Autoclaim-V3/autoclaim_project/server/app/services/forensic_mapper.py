@@ -174,6 +174,11 @@ def map_forensic_to_db(ai_result: Dict[str, Any], policy_data: Dict[str, Any] = 
         
         "forgery_detected": forensics.get("is_screen_recapture", False) or forensics.get("has_ui_elements", False),
         "authenticity_score": _compute_authenticity_score(forensics),
+
+        # ── AI-GENERATED IMAGE DETECTION (Phase 4) ────────────────────────────
+        "ai_generated_detected": bool(forensics.get("ai_generated", False)),
+        "ai_generation_confidence": forensics.get("ai_generation_confidence"),
+        "ai_generation_indicators": forensics.get("ai_generation_indicators", []),
         
         # SCENE EXTRACTION (Removed as per user request)
         # ------------------------------------------------------------
@@ -348,7 +353,13 @@ def _compute_authenticity_score(forensics: Dict[str, Any]) -> float:
         score -= 5
     if (forensics.get("image_quality") or "").lower() == "low":
         score -= 10
-    
+    # Phase 4: AI-generated images heavily penalised
+    ai_gen_confidence = float(forensics.get("ai_generation_confidence") or 0.0)
+    if forensics.get("ai_generated") or ai_gen_confidence >= 0.7:
+        score -= 40
+    elif ai_gen_confidence >= 0.4:
+        score -= 20
+
     return max(0.0, score)
 
 

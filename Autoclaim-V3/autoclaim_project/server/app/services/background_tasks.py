@@ -12,6 +12,11 @@ from app.db import models
 from app.services import ai_orchestrator
 from app.services.forensic_mapper import map_forensic_to_db
 from app.services.repair_estimator_service import get_price_estimate_from_api
+from app.services.coverage_calculator import (
+    compute_effective_coverage,
+    compute_payout,
+    compute_auto_approval_threshold,
+)
 
 
 def process_claim_ai_analysis(
@@ -90,13 +95,15 @@ def process_claim_ai_analysis(
             claim_amount = claim.estimated_cost_min
         # If no estimate, verification will use 0 (which may trigger amount threshold checks)
 
-        # ── Load admin-configured threshold from DB
+        # ── Load admin-configured threshold from DB (fallback only)
+        # v3: Dynamic threshold = 20% of effective coverage (computed below).
+        # The DB setting is kept as a hard fallback for claims without a policy.
         from app.services.verification_rules import RuleConfig
         _threshold_row = db.query(models.SystemSetting).filter(
             models.SystemSetting.key == "auto_approval_threshold"
         ).first()
-        _threshold = int(_threshold_row.value) if _threshold_row else 20_000
-        custom_rule_config = RuleConfig(AUTO_APPROVAL_AMOUNT_THRESHOLD=_threshold)
+        _fallback_threshold = int(_threshold_row.value) if _threshold_row else 20_000
+        custom_rule_config = RuleConfig(AUTO_APPROVAL_AMOUNT_THRESHOLD=_fallback_threshold)
         
 
         # Perform AI analysis with verification
@@ -186,6 +193,45 @@ def process_claim_ai_analysis(
                     claim.estimated_cost_min = cost_range.get("min")
                     claim.estimated_cost_max = cost_range.get("max")
             # ────────────────────────────────────────────────────────────────
+
+            # ── Phase 3: Coverage & Payout Engine ───────────────────────────
+            effective_coverage = None
+            payout_result = None
+            try:
+                if policy_data and policy_data.get("plan_coverage") and policy_data.get("start_date"):
+                    from datetime import datetime as _dt
+                    _start = _dt.fromisoformat(policy_data["start_date"])
+                    effective_coverage = compute_effective_coverage(
+                        plan_coverage=policy_data["plan_coverage"],
+                        start_date=_start,
+                        accident_date=claim.accident_date,
+                    )
+                    claim.effective_coverage_amount = int(effective_coverage)
+
+                    # Dynamic auto-approval threshold = 20% of effective coverage
+                    dynamic_threshold = compute_auto_approval_threshold(effective_coverage)
+                    custom_rule_config = RuleConfig(
+                        AUTO_APPROVAL_AMOUNT_THRESHOLD=int(dynamic_threshold)
+                    )
+                    print(
+                        f"[Coverage] Effective coverage: ₹{effective_coverage:,.0f} | "
+                        f"Dynamic threshold: ₹{dynamic_threshold:,.0f}"
+                    )
+
+                    # Compute payout if we have an estimate
+                    repair_est = claim.estimated_cost_max or claim.estimated_cost_min or 0
+                    if repair_est > 0:
+                        payout_result = compute_payout(repair_est, effective_coverage)
+                        claim.payout_rule = payout_result["payout_rule"]
+                        claim.payout_amount = payout_result["payout_amount"]
+                        claim.is_totaled = payout_result["is_totaled"]
+                        print(
+                            f"[Coverage] Payout rule: {payout_result['payout_rule']} | "
+                            f"Payout: ₹{payout_result['payout_amount']:,} | "
+                            f"Totaled: {payout_result['is_totaled']}"
+                        )
+            except Exception as cov_err:
+                logger.warning(f"[Coverage] Engine failed (non-fatal): {cov_err}")
             
             # ── Re-verify with the freshly computed cost ──────────────────────────
             fresh_amount = claim.estimated_cost_max or claim.estimated_cost_min or 0
@@ -293,6 +339,13 @@ def process_claim_ai_analysis(
             auto_approved = verification.get("auto_approved", False)
             verification_status = (verification.get("status") or "").upper()
 
+            # Phase 3: Totaled vehicles CANNOT be auto-approved — require agent decision
+            if claim.is_totaled and auto_approved:
+                auto_approved = False
+                claim.ai_recommendation = "FLAGGED"
+                forensic_fields["ai_recommendation"] = "FLAGGED"
+                print(f"[Background Task] ⚠ Claim {claim_id} TOTALED — blocked auto-approval, sent for human review")
+
             if auto_approved:
                 claim.status = "approved"
                 from datetime import datetime
@@ -303,6 +356,17 @@ def process_claim_ai_analysis(
                     claim_id=claim_id,
                     message=f"🎉 Your Claim #{claim_id} has been automatically approved!",
                 ))
+                # Credit wallet with payout_amount (v3 coverage-aware) or fallback to estimate
+                from app.api.wallet import credit_wallet
+                credit_amount = claim.payout_amount or claim.estimated_cost_max or claim.estimated_cost_min or 0.0
+                if credit_amount > 0:
+                    credit_wallet(
+                        user_id=claim.user_id,
+                        amount=credit_amount,
+                        claim_id=claim_id,
+                        db=db,
+                        description=f"Claim #{claim_id} auto-approved — \u20b9{credit_amount:,.0f} credited"
+                    )
                 print(f"[Background Task] ✅ Claim {claim_id} AUTO-APPROVED (score={verification.get('severity_score', 0)})")
             elif verification_status == "REJECTED":
                 claim.status = "rejected"

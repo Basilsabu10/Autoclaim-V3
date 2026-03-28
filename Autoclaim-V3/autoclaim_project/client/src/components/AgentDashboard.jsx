@@ -12,7 +12,9 @@ const PRIORITY_STYLE = {
 };
 
 const statusConfig = {
+    pending_clearance: { label: "📹 Needs Clearance", className: "ud-status-pill ud-status-clearance" },
     pending: { label: "Pending", className: "ud-status-pill ud-status-review" },
+    cleared: { label: "Cleared", className: "ud-status-pill ud-status-processing" },
     approved: { label: "Approved", className: "ud-status-pill ud-status-approved" },
     rejected: { label: "Rejected", className: "ud-status-pill ud-status-rejected" },
     processing: { label: "Processing", className: "ud-status-pill ud-status-processing" },
@@ -148,6 +150,7 @@ function AgentDashboard() {
 
     const stats = {
         total: claims.length,
+        clearance: claims.filter(c => c.status === "pending_clearance").length,
         pending: claims.filter(c => c.status === "pending" || c.status === "processing").length,
         approved: claims.filter(c => c.status === "approved").length,
         rejected: claims.filter(c => c.status === "rejected").length,
@@ -187,6 +190,13 @@ function AgentDashboard() {
                             <span className="stat-label">Total Claims</span>
                         </div>
                     </div>
+                    <div className="ud-stat-card" style={{ borderTop: "3px solid #7c3aed" }}>
+                        <div className="ud-stat-icon" style={{ background: "#ede9fe", color: "#7c3aed" }}>📹</div>
+                        <div className="stat-info">
+                            <span className="stat-value" style={{ color: "#7c3aed" }}>{stats.clearance}</span>
+                            <span className="stat-label">Needs Clearance</span>
+                        </div>
+                    </div>
                     <div className="ud-stat-card ud-stat-review">
                         <div className="ud-stat-icon ud-icon-review">⚖️</div>
                         <div className="stat-info">
@@ -221,13 +231,16 @@ function AgentDashboard() {
                     {/* Tabs */}
                     <div className="ud-tabs">
                         {[
-                            { key: "all", label: "All Claims" },
-                            { key: "pending", label: "Pending Review" },
-                            { key: "approved", label: "Approved" },
-                            { key: "rejected", label: "Rejected" },
+                            { key: "all",              label: "All Claims" },
+                            { key: "pending_clearance", label: `📹 Needs Clearance${stats.clearance > 0 ? ` (${stats.clearance})` : ""}` },
+                            { key: "pending",           label: "Pending Review" },
+                            { key: "approved",          label: "Approved" },
+                            { key: "rejected",          label: "Rejected" },
                         ].map(tab => (
                             <button key={tab.key}
-                                className={`ud-tab${activeTab === tab.key ? " ud-tab-active" : ""}`}
+                                className={`ud-tab${activeTab === tab.key ? " ud-tab-active" : ""}${
+                                    tab.key === "pending_clearance" && stats.clearance > 0 ? " ud-tab-urgent" : ""
+                                }`}
                                 onClick={() => { setActiveTab(tab.key); setSelectedIds(new Set()); }}>
                                 {tab.label}
                             </button>

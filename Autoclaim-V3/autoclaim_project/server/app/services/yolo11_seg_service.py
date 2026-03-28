@@ -66,15 +66,15 @@ DAMAGE_SEVERITY_WEIGHT = {
     "Missing part": 0.8,
 }
 
-# ---------------------------------------------------------------------------
+
 # GLOBAL MODEL
-# ---------------------------------------------------------------------------
+
 seg_model = None
 SEG_MODEL_INITIALIZED = False
 
 
 def check_gpu_available() -> Dict[str, Any]:
-    """Check if CUDA GPU is available."""
+    
     if not YOLO_SEG_AVAILABLE:
         return {"available": False, "reason": "ultralytics not installed"}
     try:
@@ -167,9 +167,9 @@ def detect_damage_and_parts(
                     resized_im = resized_im.convert("RGB")
                 resized_im.save(processed_path, quality=95)
 
-        # ------------------------------------------------------------------ #
+        
         # Phase 1 — PART DETECTION  (conf=0.10, imgsz=800)                   #
-        # ------------------------------------------------------------------ #
+        
         part_results = seg_model(
             processed_path,
             conf=PARTS_CONF,
@@ -230,9 +230,9 @@ def detect_damage_and_parts(
                 if cls_id == 14 and license_plate_bbox is None:  # License-plate
                     license_plate_bbox = det["bbox"]
 
-        # ------------------------------------------------------------------ #
+       
         # Phase 2 — DAMAGE DETECTION  (conf=0.15, imgsz=800)                 #
-        # ------------------------------------------------------------------ #
+        
         dmg_results = seg_model(
             processed_path,
             conf=DAMAGE_CONF,
@@ -291,9 +291,9 @@ def detect_damage_and_parts(
             except:
                 pass
 
-        # ------------------------------------------------------------------ #
+        
         # Merge & correlate                                                   #
-        # ------------------------------------------------------------------ #
+        
         all_dets = part_dets + damage_dets
 
         damage_part_mapping = _correlate_damage_to_parts(damage_dets, part_dets, orig_shape)
@@ -340,9 +340,9 @@ def detect_damage_and_parts(
         return {"success": False, "error": f"Detection failed: {str(e)}"}
 
 
-# ---------------------------------------------------------------------------
+
 # LICENSE PLATE CROP (for OCR enhancement)
-# ---------------------------------------------------------------------------
+
 def get_license_plate_crop(image_path: str) -> Optional[np.ndarray]:
     """
     Detect license plate and return the cropped region as a numpy array.

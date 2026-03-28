@@ -145,6 +145,11 @@ class ForensicAnalysis(Base):
     pre_existing_description = Column(Text, nullable=True)
     pre_existing_confidence = Column(Float, nullable=True)
 
+    # ── AI-GENERATED IMAGE DETECTION (Phase 4) ───────────────────────────────
+    ai_generated_detected = Column(Boolean, default=False)          # True if image is AI-generated
+    ai_generation_confidence = Column(Float, nullable=True)         # 0.0–1.0
+    ai_generation_indicators = Column(JSON, default=list)           # List of evidence strings
+
     # ── RISK & FINAL ASSESSMENT (rule-based computed) ─────────────────────────
     ai_risk_flags = Column(JSON, default=list)         # e.g. ["PLATE_MISMATCH", "HIGH_COST"]
     fraud_probability = Column(String, nullable=True)  # VERY_LOW | LOW | MEDIUM | HIGH
@@ -171,7 +176,13 @@ class Claim(Base):
     assigned_agent_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=True)
     description = Column(Text, nullable=True)
     image_paths = Column(JSON, default=list)  # Damage images
-    status = Column(String, index=True, default="pending")  # pending | processing | approved | rejected | failed
+
+    # ── CLAIM STATE MACHINE ──────────────────────────────────────────────────
+    # Valid statuses (in order of flow):
+    #   pending_clearance → cleared → submitted → processing → approved/rejected/flagged/failed
+    # Legacy statuses (still supported): pending, processing, approved, rejected, failed
+    status = Column(String, index=True, default="pending_clearance")
+
     assignment_method = Column(String, nullable=True)  # NULL | "auto" | "manual"
     created_at = Column(DateTime, default=datetime.utcnow)
     accident_date = Column(DateTime, nullable=True)
@@ -181,6 +192,23 @@ class Claim(Base):
     front_image_path = Column(String, nullable=True)
     estimate_bill_path = Column(String, nullable=True)
     gd_entry_path = Column(String, nullable=True)
+
+    # ── AGENT CLEARANCE ──────────────────────────────────────────────────────
+    # Filled by the agent during the video clearance session (Phase 1)
+    clearance_conducted_at = Column(DateTime, nullable=True)
+    clearance_agent_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    agent_document_type = Column(String, nullable=True)   # "Driving Licence" | "Aadhaar" | "PAN"
+    agent_document_number = Column(String, nullable=True)  # Typed by agent — no OCR
+    clearance_notes = Column(Text, nullable=True)          # Optional agent notes
+
+    # ── VIDEO SESSION (Phase v3.1) ────────────────────────────────────
+    video_session_started_at = Column(DateTime, nullable=True)  # Set when agent clicks "Start Call"
+
+    # ── COVERAGE & PAYOUT (Phase 3) ──────────────────────────────────────────
+    effective_coverage_amount = Column(Integer, nullable=True)  # Computed at claim time with depreciation
+    payout_rule = Column(String, nullable=True)                 # "full" | "partial" | "totaled"
+    payout_amount = Column(Integer, nullable=True)              # Actual payout amount in ₹
+    is_totaled = Column(Boolean, default=False)                 # True → blocks auto-approval
 
     # Quick-access fields (denormalized for performance)
     vehicle_number_plate = Column(String, nullable=True)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./ViewClaim.css";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -7,6 +7,7 @@ import API_URL from "../config/api";
 function ViewClaim() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const jitsiApiRef = useRef(null);
     const [claim, setClaim] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -34,6 +35,15 @@ function ViewClaim() {
     // PDF Download
     const [downloading, setDownloading] = useState(false);
 
+    // ── Video Verification ────────────────────────────────────────────
+    const [roomUrl, setRoomUrl] = useState(null);
+    const [jitsiRoom, setJitsiRoom] = useState(null);
+    const [startingVideo, setStartingVideo] = useState(false);
+    const [snapshotSaved, setSnapshotSaved] = useState({ id_document: false, vin_number: false, damage_overview: false });
+    const [capturingSnapshot, setCapturingSnapshot] = useState(null); // current snapshot type being captured
+    const [clearanceForm, setClearanceForm] = useState({ document_type: "", document_number: "", notes: "" });
+    const [issuingClearance, setIssuingClearance] = useState(false);
+
     // Toast
     const [toast, setToast] = useState(null);
     const showToast = (msg, type = "success") => {
@@ -53,6 +63,46 @@ function ViewClaim() {
         }, 3000);
         return () => clearInterval(pollInterval);
     }, [id, claim?.processing_status]);
+
+    // Restore active video session if already started
+    useEffect(() => {
+        if (claim?.video_session_started_at && !roomUrl) {
+            const room = `autoclaim-verify-${id}`;
+            setJitsiRoom(room);
+            setRoomUrl(`https://meet.jit.si/${room}`);
+        }
+    }, [claim?.video_session_started_at]);
+
+    // Initialize Jitsi IFrame API
+    useEffect(() => {
+        if (roomUrl && jitsiRoom && window.JitsiMeetExternalAPI) {
+            setTimeout(() => {
+                const container = document.getElementById("jitsi-container");
+                if (container && !jitsiApiRef.current) {
+                    const domain = "meet.jit.si";
+                    const options = {
+                        roomName: jitsiRoom,
+                        width: "100%",
+                        height: 500,
+                        parentNode: container,
+                        userInfo: { displayName: "Agent" },
+                        configOverwrite: {
+                            prejoinPageEnabled: false,
+                            startWithVideoMuted: false,
+                        },
+                    };
+                    jitsiApiRef.current = new window.JitsiMeetExternalAPI(domain, options);
+                }
+            }, 100);
+        }
+
+        return () => {
+            if (jitsiApiRef.current) {
+                jitsiApiRef.current.dispose();
+                jitsiApiRef.current = null;
+            }
+        };
+    }, [roomUrl, jitsiRoom]);
 
     const fetchClaimDetails = async () => {
         try {
@@ -167,6 +217,99 @@ function ViewClaim() {
             setReanalyzing(false);
         }
     };
+
+    // ── Video Verification Functions ───────────────────────────────────
+    const startVideoSession = async () => {
+        setStartingVideo(true);
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${API_URL}/claims/${id}/start-video-session`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setRoomUrl(data.room_url);
+                setJitsiRoom(data.jitsi_room);
+                showToast("📹 Video session started! User has been notified.");
+                fetchClaimDetails();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                showToast(err.detail || "Failed to start video session.", "error");
+            }
+        } catch (e) {
+            showToast("Network error starting video session.", "error");
+        } finally {
+            setStartingVideo(false);
+        }
+    };
+
+    const captureSnapshot = async (snapshotType) => {
+        setCapturingSnapshot(snapshotType);
+        try {
+            if (!jitsiApiRef.current) {
+                showToast("Jitsi API not initialized", "error");
+                setCapturingSnapshot(null);
+                return;
+            }
+
+            jitsiApiRef.current.captureLargeVideoScreenshot().then(async (dataObj) => {
+                const base64Data = dataObj.dataURL;
+
+                // POST to backend
+                const token = localStorage.getItem("token");
+                const res = await fetch(`${API_URL}/claims/${id}/clearance-snapshot`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ snapshot_type: snapshotType, image_data: base64Data }),
+                });
+                
+                if (res.ok) {
+                    setSnapshotSaved(prev => ({ ...prev, [snapshotType]: true }));
+                    const labelMap = { id_document: "ID Document", vin_number: "VIN Number", damage_overview: "Damage Overview" };
+                    showToast(`✅ ${labelMap[snapshotType]} snapshot saved!`);
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    showToast(err.detail || "Snapshot upload failed.", "error");
+                }
+                setCapturingSnapshot(null);
+            }).catch(e => {
+                showToast("Screenshot capture failed: " + e.message, "error");
+                setCapturingSnapshot(null);
+            });
+        } catch (e) {
+            showToast("Snapshot error: " + e.message, "error");
+            setCapturingSnapshot(null);
+        }
+    };
+
+    const issueClearance = async () => {
+        if (!clearanceForm.document_type) { showToast("Please select a Document Type.", "error"); return; }
+        if (!clearanceForm.document_number.trim()) { showToast("Please enter the Document Number.", "error"); return; }
+        setIssuingClearance(true);
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${API_URL}/claims/${id}/clear`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+                body: JSON.stringify(clearanceForm),
+            });
+            if (res.ok) {
+                showToast("✅ Claim cleared! AI analysis is now running automatically.");
+                setClearanceForm({ document_type: "", document_number: "", notes: "" });
+                setRoomUrl(null);
+                fetchClaimDetails();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                showToast(err.detail || "Failed to issue clearance.", "error");
+            }
+        } catch (e) {
+            showToast("Network error issuing clearance.", "error");
+        } finally {
+            setIssuingClearance(false);
+        }
+    };
+    // ─────────────────────────────────────────────────────────────────────
 
     const downloadReport = async () => {
         setDownloading(true);
@@ -959,6 +1102,36 @@ function ViewClaim() {
                     </>
                 )}
 
+                {/* Clearance & Video Snapshots */}
+                {claim.clearance && claim.clearance.snapshots && claim.clearance.snapshots.length > 0 && (
+                    <div className="claim-card full-width">
+                        <h2>📹 Video Verification Snapshots</h2>
+                        <div className="image-section">
+                            <p style={{ color: "#64748b", fontSize: "0.9rem", marginBottom: "16px" }}>
+                                Identity and vehicle damage snapshots captured by the agent during the live video session.
+                            </p>
+                            <div className="image-gallery">
+                                {claim.clearance.snapshots.map((snap) => (
+                                    <div key={snap.id} className="image-item">
+                                        <img
+                                            src={`${API_URL}/uploads/clearance_snapshots/${snap.file_path}`}
+                                            alt={snap.label}
+                                            onError={(e) => {
+                                                e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23ddd' width='200' height='200'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3EImage Not Found%3C/text%3E%3C/svg%3E";
+                                            }}
+                                            style={{cursor: 'pointer'}}
+                                            onClick={() => window.open(`${API_URL}/uploads/clearance_snapshots/${snap.file_path}`, '_blank')}
+                                        />
+                                        <span className="image-label">
+                                            {snap.label.replace('clearance_', '').replace(/_/g, ' ').toUpperCase()}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Uploaded Images */}
                 {(claim.image_paths?.length > 0 || claim.front_image_path || claim.case_number_image_path || claim.estimate_bill_path || claim.gd_entry_path) && (
                     <div className="claim-card full-width">
@@ -1195,6 +1368,173 @@ function ViewClaim() {
                         >
                             {assigning ? "Saving…" : "✔ Save Assignment"}
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Video Verification Panel (agent + pending_clearance only) ── */}
+            {role === "agent" && claim.status === "pending_clearance" && (
+                <div className="vv-panel claim-card full-width" style={{ marginTop: "20px" }}>
+                    {/* Header */}
+                    <div className="vv-header">
+                        <div className="vv-title-row">
+                            <span className="vv-icon">📹</span>
+                            <div>
+                                <h2 style={{ margin: 0, color: "#fff", fontSize: "1.25rem" }}>Video Verification Session</h2>
+                                <p style={{ margin: "2px 0 0", color: "rgba(255,255,255,0.75)", fontSize: "0.85rem" }}>
+                                    Conduct the live identity &amp; vehicle inspection call, capture evidence, then issue clearance.
+                                </p>
+                            </div>
+                        </div>
+                        {roomUrl && (
+                            <span className="vv-live-badge">🔴 LIVE</span>
+                        )}
+                    </div>
+
+                    <div style={{ padding: "1.5rem" }}>
+
+                        {/* Step 1 — Start / Rejoin Session */}
+                        <div className="vv-step">
+                            <div className="vv-step-num">1</div>
+                            <div style={{ flex: 1 }}>
+                                <p className="vv-step-label">Start or rejoin the Jitsi video call</p>
+                                <button
+                                    id="btn-start-video"
+                                    className={`vv-btn vv-btn-primary ${roomUrl ? "vv-btn-rejoin" : ""}`}
+                                    onClick={startVideoSession}
+                                    disabled={startingVideo}
+                                >
+                                    {startingVideo ? (
+                                        <><span className="vv-spinner" /> Starting…</>
+                                    ) : roomUrl ? (
+                                        "🔄 Rejoin Session"
+                                    ) : (
+                                        "📹 Start Video Verification"
+                                    )}
+                                </button>
+                                {roomUrl && (
+                                    <a
+                                        href={roomUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ marginLeft: "12px", fontSize: "0.82rem", color: "#7392B7" }}
+                                    >
+                                        Open in new tab ↗
+                                    </a>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Step 2 — Jitsi Embed */}
+                        {roomUrl && (
+                            <div className="vv-step" style={{ flexDirection: "column", gap: "10px" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                    <div className="vv-step-num">2</div>
+                                    <p className="vv-step-label" style={{ margin: 0 }}>Live video feed</p>
+                                </div>
+                                <div id="jitsi-container" className="vv-iframe-wrapper" style={{ height: "500px", width: "100%", overflow: "hidden", borderRadius: "8px" }}>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Step 3 — Snapshots */}
+                        <div className="vv-step">
+                            <div className="vv-step-num">3</div>
+                            <div style={{ flex: 1 }}>
+                                <p className="vv-step-label">Capture evidence snapshots from your screen</p>
+                                <p style={{ fontSize: "0.8rem", color: "#64748b", marginBottom: "12px" }}>
+                                    Click a button to discreetly capture a high-quality frame from the active speaker's video without any screen-sharing prompts.
+                                </p>
+                                <div className="vv-snapshot-row">
+                                    {[
+                                        { type: "id_document",    label: "Capture ID",     icon: "🪪" },
+                                        { type: "vin_number",     label: "Capture VIN",    icon: "🔢" },
+                                        { type: "damage_overview",label: "Capture Damage", icon: "📷" },
+                                    ].map(({ type, label, icon }) => (
+                                        <div key={type} className="vv-snap-item">
+                                            <button
+                                                id={`btn-snap-${type}`}
+                                                className={`vv-btn vv-btn-snap ${snapshotSaved[type] ? "vv-btn-saved" : ""}`}
+                                                onClick={() => captureSnapshot(type)}
+                                                disabled={!roomUrl || capturingSnapshot !== null}
+                                            >
+                                                {capturingSnapshot === type ? (
+                                                    <><span className="vv-spinner" /> Capturing…</>
+                                                ) : snapshotSaved[type] ? (
+                                                    `✅ ${label}`
+                                                ) : (
+                                                    `${icon} ${label}`
+                                                )}
+                                            </button>
+                                            {snapshotSaved[type] && (
+                                                <span className="vv-saved-badge">Saved to DB ✓</span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Step 4 — Clearance Form */}
+                        <div className="vv-step">
+                            <div className="vv-step-num vv-step-num-final">4</div>
+                            <div style={{ flex: 1 }}>
+                                <p className="vv-step-label">Approve Clearance — enter verified document details</p>
+                                <div className="vv-form">
+                                    <div className="vv-form-row">
+                                        <div className="vv-form-group">
+                                            <label className="vv-label" htmlFor="vv-doc-type">Document Type *</label>
+                                            <select
+                                                id="vv-doc-type"
+                                                className="vv-select"
+                                                value={clearanceForm.document_type}
+                                                onChange={e => setClearanceForm(f => ({ ...f, document_type: e.target.value }))}
+                                            >
+                                                <option value="">— Select —</option>
+                                                {["Driving Licence", "Aadhaar", "PAN", "Passport", "Voter ID"].map(t => (
+                                                    <option key={t} value={t}>{t}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="vv-form-group">
+                                            <label className="vv-label" htmlFor="vv-doc-num">Document Number *</label>
+                                            <input
+                                                id="vv-doc-num"
+                                                type="text"
+                                                className="vv-input"
+                                                placeholder="e.g. DL-1420110012345"
+                                                value={clearanceForm.document_number}
+                                                onChange={e => setClearanceForm(f => ({ ...f, document_number: e.target.value }))}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="vv-form-group">
+                                        <label className="vv-label" htmlFor="vv-notes">Agent Notes (optional)</label>
+                                        <textarea
+                                            id="vv-notes"
+                                            className="vv-textarea"
+                                            rows={3}
+                                            placeholder="Any additional observations from the video session…"
+                                            value={clearanceForm.notes}
+                                            onChange={e => setClearanceForm(f => ({ ...f, notes: e.target.value }))}
+                                        />
+                                    </div>
+                                    <button
+                                        id="btn-issue-clearance"
+                                        className="vv-btn vv-btn-clear"
+                                        onClick={issueClearance}
+                                        disabled={issuingClearance || !clearanceForm.document_type || !clearanceForm.document_number.trim()}
+                                    >
+                                        {issuingClearance ? (
+                                            <><span className="vv-spinner" /> Issuing…</>
+                                        ) : (
+                                            "✅ Issue Clearance"
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             )}
