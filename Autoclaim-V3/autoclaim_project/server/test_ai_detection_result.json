@@ -1,0 +1,336 @@
+{
+  "metadata": {
+    "timestamp": "2026-01-31T14:30:41",
+    "gps_lat": null,
+    "gps_lon": null,
+    "location_name": null,
+    "camera_type": "Google Pixel",
+    "filename_parsed": true,
+    "source": "filename",
+    "image_hashes": [
+      "fc9cf07c81d85e60",
+      "fc9cf07c81d85e60"
+    ],
+    "anomalies": [
+      "NO_CAMERA_MAKE",
+      "NO_CAPTURE_TIMESTAMP"
+    ],
+    "camera_make": null,
+    "camera_model": null
+  },
+  "ocr": {
+    "plate_text": "KL-07-CU-7475",
+    "confidence": 0.95,
+    "district_name": "Ernakulam",
+    "raw_texts": [
+      "KL-07-CU-7475"
+    ],
+    "source": "groq"
+  },
+  "yolo_damage": {
+    "success": true,
+    "vehicle_detected": true,
+    "damage_detected": false,
+    "detections": [
+      {
+        "class_id": 11,
+        "class_name": "Hood",
+        "confidence": 0.9115,
+        "bbox": [
+          796.5,
+          2565.3,
+          3409.8,
+          3168.0
+        ],
+        "area_percentage": 6.44,
+        "mask_area_percentage": 5.47,
+        "is_damage": false,
+        "is_part": true,
+        "phase": 1
+      },
+      {
+        "class_id": 8,
+        "class_name": "Windshield",
+        "confidence": 0.816,
+        "bbox": [
+          1313.0,
+          2039.2,
+          3115.8,
+          2577.7
+        ],
+        "area_percentage": 3.97,
+        "mask_area_percentage": 3.38,
+        "is_damage": false,
+        "is_part": true,
+        "phase": 1
+      },
+      {
+        "class_id": 15,
+        "class_name": "Front-bumper",
+        "confidence": 0.7943,
+        "bbox": [
+          610.9,
+          2754.4,
+          3574.1,
+          4549.6
+        ],
+        "area_percentage": 21.74,
+        "mask_area_percentage": 10.12,
+        "is_damage": false,
+        "is_part": true,
+        "phase": 1
+      },
+      {
+        "class_id": 7,
+        "class_name": "Grille",
+        "confidence": 0.7756,
+        "bbox": [
+          983.1,
+          3117.3,
+          3002.7,
+          3729.8
+        ],
+        "area_percentage": 5.06,
+        "mask_area_percentage": 4.45,
+        "is_damage": false,
+        "is_part": true,
+        "phase": 1
+      },
+      {
+        "class_id": 14,
+        "class_name": "License-plate",
+        "confidence": 0.6785,
+        "bbox": [
+          1445.7,
+          3911.9,
+          2431.1,
+          4189.5
+        ],
+        "area_percentage": 1.12,
+        "mask_area_percentage": 1.04,
+        "is_damage": false,
+        "is_part": true,
+        "phase": 1
+      },
+      {
+        "class_id": 7,
+        "class_name": "Grille",
+        "confidence": 0.5844,
+        "bbox": [
+          2912.8,
+          2929.6,
+          3486.7,
+          3443.3
+        ],
+        "area_percentage": 1.21,
+        "mask_area_percentage": 0.57,
+        "is_damage": false,
+        "is_part": true,
+        "phase": 1
+      },
+      {
+        "class_id": 17,
+        "class_name": "Mirror",
+        "confidence": 0.5313,
+        "bbox": [
+          3153.5,
+          2357.1,
+          3450.1,
+          2562.7
+        ],
+        "area_percentage": 0.25,
+        "mask_area_percentage": 0.24,
+        "is_damage": false,
+        "is_part": true,
+        "phase": 1
+      },
+      {
+        "class_id": 17,
+        "class_name": "Mirror",
+        "confidence": 0.2082,
+        "bbox": [
+          1090.1,
+          2394.6,
+          1320.2,
+          2574.3
+        ],
+        "area_percentage": 0.17,
+        "mask_area_percentage": 0.14,
+        "is_damage": false,
+        "is_part": true,
+        "phase": 1
+      },
+      {
+        "class_id": 14,
+        "class_name": "License-plate",
+        "confidence": 0.1435,
+        "bbox": [
+          2444.1,
+          5367.9,
+          2616.3,
+          5666.9
+        ],
+        "area_percentage": 0.21,
+        "mask_area_percentage": 0.14,
+        "is_damage": false,
+        "is_part": true,
+        "phase": 1
+      }
+    ],
+    "total_detections": 9,
+    "severity": "none",
+    "severity_score": 0.0,
+    "affected_parts": [
+      "windshield",
+      "license_plate",
+      "grille",
+      "front_bumper",
+      "side_mirror_l",
+      "hood"
+    ],
+    "damaged_panels": [],
+    "price_api_parts": [],
+    "damage_part_mapping": [],
+    "summary": "No damage detected. Parts visible: Hood, Mirror, Windshield, Grille, License-plate, Front-bumper"
+  },
+  "ai_analysis": {
+    "success": true,
+    "provider": "unified",
+    "model": "yolo11m-seg",
+    "identity": {
+      "vehicle_color": "red",
+      "license_plate_text": "KL-07-CU-7475",
+      "license_plate_visible": true,
+      "vehicle_make": "Kia",
+      "vehicle_model": "Seltos"
+    },
+    "damage": {
+      "damage_detected": false,
+      "damage_type": null,
+      "severity_score": 0.0,
+      "severity": "none",
+      "damaged_panels": [],
+      "parts_missing": false,
+      "damage_descriptions": []
+    },
+    "forensics": {
+      "is_screen_recapture": false,
+      "has_ui_elements": false,
+      "has_watermarks": false,
+      "image_quality": "high",
+      "is_blurry": false,
+      "multiple_light_sources": true,
+      "shadows_inconsistent": false,
+      "airbags_deployed": false,
+      "fluid_leaks_visible": false,
+      "ai_generated": false,
+      "ai_generation_confidence": 0.0,
+      "ai_generation_indicators": [],
+      "ela_score": 0.12941176470588237
+    },
+    "damage_assessment": {
+      "ai_damage_detected": false,
+      "ai_severity": "none",
+      "damaged_panels": [],
+      "damage_type": null,
+      "severity_score": 0.0,
+      "parts_missing": false,
+      "ai_cost_min": 0,
+      "ai_cost_max": 0
+    },
+    "fraud_analysis": {
+      "fraud_detected": false,
+      "fraud_score": 0.0,
+      "fraud_indicators": [],
+      "reasoning": "The image appears to be a genuine photo of a Kia Seltos with no signs of AI generation or forgery."
+    },
+    "ai_detection": {
+      "success": true,
+      "ai_generated": false,
+      "max_ai_score": 0.01,
+      "message": "Sightengine completed cleanly. AI= No"
+    },
+    "verification_status": "REJECTED",
+    "ai_recommendation": "REJECTED",
+    "overall_confidence_score": 0.0,
+    "fraud_probability": "HIGH",
+    "ai_risk_flags": [
+      "GPS_MISSING",
+      "VEHICLE_LOW_CONFIDENCE",
+      "VEHICLE_MISMATCH",
+      "YOLO_NO_DAMAGE_DETECTED",
+      "POLICY_INACTIVE"
+    ],
+    "human_review_priority": "CRITICAL",
+    "ai_reasoning": "3 critical fraud indicator(s) detected."
+  },
+  "verification": {
+    "status": "REJECTED",
+    "decision_reason": "3 critical fraud indicator(s) detected.",
+    "confidence_level": "HIGH",
+    "confidence_score": 0.0,
+    "auto_approved": false,
+    "requires_human_review": true,
+    "requires_monitoring": false,
+    "passed_checks_count": 17,
+    "failed_checks_count": 5,
+    "severity_score": 49.5,
+    "passed_checks": [
+      "IMAGE_QUALITY_OK",
+      "METADATA_TIMESTAMP",
+      "REVERSE_IMAGE_SEARCH",
+      "DIGITAL_FORGERY_CHECK",
+      "SIGHTENGINE_AI_DETECTION_OK",
+      "LICENSE_PLATE",
+      "CHASE_NUMBER_NOT_PROVIDED",
+      "PRE_EXISTING_DAMAGE",
+      "TOTAL_VEHICLE_CHECK_NA",
+      "NARRATIVE_CONSISTENCY",
+      "MULTI_IMAGE_NOT_APPLICABLE",
+      "AMOUNT_THRESHOLD",
+      "DAMAGE_COST_SANITY_NO_ESTIMATE",
+      "POLICY_DATE_WINDOW",
+      "COVERAGE_ADEQUATE",
+      "DUPLICATE_CLAIM_NOT_APPLICABLE",
+      "ACCIDENT_DATE_NOT_PROVIDED"
+    ],
+    "failed_checks": [
+      {
+        "rule_id": "GPS_MISSING",
+        "rule_name": "GPS Verification",
+        "reason": "No GPS coordinates in image metadata.",
+        "severity": "LOW",
+        "phase": "A"
+      },
+      {
+        "rule_id": "VEHICLE_LOW_CONFIDENCE",
+        "rule_name": "Vehicle Detection Confidence",
+        "reason": "Vehicle ID confidence 0% is low and neither brand nor model match policy data.",
+        "severity": "MEDIUM",
+        "phase": "B"
+      },
+      {
+        "rule_id": "VEHICLE_MISMATCH",
+        "rule_name": "Vehicle Match (FR-2.4)",
+        "reason": "Vehicle mismatch \u2014 Policy:  , Detected: kia seltos. Neither brand nor model could be verified.",
+        "severity": "CRITICAL",
+        "phase": "B"
+      },
+      {
+        "rule_id": "YOLO_NO_DAMAGE_DETECTED",
+        "rule_name": "YOLO Damage Detection (v2.1 NEW)",
+        "reason": "YOLO model did not detect any damage in the provided images.",
+        "severity": "CRITICAL",
+        "phase": "B"
+      },
+      {
+        "rule_id": "POLICY_INACTIVE",
+        "rule_name": "Policy Status Check (v2 NEW)",
+        "reason": "Policy status is '' \u2014 must be 'active' for claim processing.",
+        "severity": "CRITICAL",
+        "phase": "E"
+      }
+    ],
+    "timestamp": "2026-03-28T15:40:37.747554"
+  }
+}
