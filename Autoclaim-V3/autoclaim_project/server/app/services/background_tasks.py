@@ -158,12 +158,20 @@ def process_claim_ai_analysis(
                 or forensic_fields.get("ai_damaged_panels")
                 or []
             )
+            policy_make  = policy_data.get("vehicle_make") if policy_data else None
+            policy_model = policy_data.get("vehicle_model") if policy_data else None
+            policy_year  = policy_data.get("vehicle_year") if policy_data else None
+
             vehicle_make  = (ai_analysis.get("identity", {}).get("vehicle_make")
-                             or forensic_fields.get("vehicle_make"))
+                             or forensic_fields.get("vehicle_make")
+                             or policy_make)
             vehicle_model = (ai_analysis.get("identity", {}).get("vehicle_model")
-                             or forensic_fields.get("vehicle_model"))
+                             or forensic_fields.get("vehicle_model")
+                             or policy_model)
             vehicle_year  = (ai_analysis.get("identity", {}).get("vehicle_year")
-                             or forensic_fields.get("vehicle_year"))
+                             or forensic_fields.get("vehicle_year")
+                             or policy_year)
+
 
             cost_populated = False
 

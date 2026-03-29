@@ -5,16 +5,16 @@
 from sqlalchemy.orm import Session
 from app.price_api.models import PartPrice
 
-# Maps damage_type → recommended action
+# Maps damage_type → recommended action (only "repair" or "replace" — no ambiguity)
 DAMAGE_ACTION = {
     "scratch":  "repair",
     "dent":     "repair",
-    "crack":    "repair_or_replace",
+    "crack":    "replace",   # cracks require part replacement
     "crush":    "replace",
     "missing":  "replace",
     "broken":   "replace",
     "shatter":  "replace",
-    "tear":     "repair_or_replace",
+    "tear":     "replace",   # tears require part replacement
     "deform":   "replace",
 }
 
@@ -52,7 +52,7 @@ def get_part_price(db: Session, make: str, model: str, part_key: str):
     if row:
         return row, "exact"
 
-    # Fallback — same make, same part, average across models
+    # Fallback 1 — same make, same part, average across models
     rows = db.query(PartPrice).filter(
         PartPrice.make.ilike(make),
         PartPrice.part_key == part_key
@@ -64,7 +64,20 @@ def get_part_price(db: Session, make: str, model: str, part_key: str):
         return {
             "repair_cost":      avg_repair,
             "replacement_cost": avg_replacement,
-        }, "fallback"
+        }, "make_average"
+
+    # Fallback 2 — global average for this part across ALL makes and models
+    global_rows = db.query(PartPrice).filter(
+        PartPrice.part_key == part_key
+    ).all()
+
+    if global_rows:
+        global_avg_repair      = int(sum(r.repair_cost or 0 for r in global_rows) / len(global_rows))
+        global_avg_replacement = int(sum(r.replacement_cost for r in global_rows) / len(global_rows))
+        return {
+            "repair_cost":      global_avg_repair,
+            "replacement_cost": global_avg_replacement,
+        }, "global_average"
 
     return None, "not_found"
 
@@ -92,18 +105,20 @@ def build_estimate(db: Session, make: str, model: str, parts: list):
         repair_cost      = price_row.repair_cost      if hasattr(price_row, "repair_cost")      else price_row["repair_cost"]
         replacement_cost = price_row.replacement_cost if hasattr(price_row, "replacement_cost") else price_row["replacement_cost"]
 
+        # If repair_cost is 0/None (not seeded), use 40% of replacement_cost
+        # as a standard industry estimate for labour-only repair work.
+        effective_repair_cost = repair_cost if repair_cost else round(replacement_cost * 0.40)
+
         if action == "repair":
-            cost = repair_cost or 0
-        elif action == "replace":
-            cost = replacement_cost
-        else:  # repair_or_replace — worst case
+            cost = effective_repair_cost
+        else:  # replace
             cost = replacement_cost
 
         results.append({
             "part_key":         part_key,
             "damage_type":      damage_type,
             "action":           action,
-            "repair_cost":      repair_cost or 0,
+            "repair_cost":      effective_repair_cost,
             "replacement_cost": replacement_cost,
             "recommended_cost": cost,
             "price_source":     match_type,
@@ -118,7 +133,7 @@ def build_estimate(db: Session, make: str, model: str, parts: list):
             "total_parts":       len(results),
             "recommended_total": total,
             "repair_count":      sum(1 for r in results if r["action"] == "repair"),
-            "replace_count":     sum(1 for r in results if r["action"] in ("replace", "repair_or_replace")),
+            "replace_count":     sum(1 for r in results if r["action"] == "replace"),
         },
         "unrecognized_parts": unrecognized,
     }

@@ -123,9 +123,9 @@ def map_forensic_to_db(ai_result: Dict[str, Any], policy_data: Dict[str, Any] = 
         # ============================================================
         # IDENTITY EXTRACTION
         # ============================================================
-        "vehicle_make": identity.get("vehicle_make"),
-        "vehicle_model": identity.get("vehicle_model"),
-        "vehicle_year": identity.get("vehicle_year"),
+        "vehicle_make": identity.get("vehicle_make") or (policy_data.get("vehicle_make") if policy_data else None),
+        "vehicle_model": identity.get("vehicle_model") or (policy_data.get("vehicle_model") if policy_data else None),
+        "vehicle_year": identity.get("vehicle_year") or (policy_data.get("vehicle_year") if policy_data else None),
         "vehicle_color": identity.get("vehicle_color"),
         "license_plate_text": identity.get("license_plate_text") or ocr.get("plate_text"),
         

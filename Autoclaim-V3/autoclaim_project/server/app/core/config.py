@@ -32,7 +32,7 @@ class Settings:
     SIGHTENGINE_API_SECRET: str = os.getenv("SIGHTENGINE_API_SECRET", "")    
     
     # Groq model (LLaMA 4 Scout Vision)
-    GROQ_MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"
+    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
 
     # AI Mode: "hybrid" (YOLO damage/parts + Groq identity/forensics/scene)
     #          "yolo_only" (no external API — YOLO + sensible defaults)
