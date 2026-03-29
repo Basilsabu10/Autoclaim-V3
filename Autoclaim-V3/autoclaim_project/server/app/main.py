@@ -53,12 +53,12 @@ try:
 
         # v3 Phase 1 — Agent clearance + video session columns
         clearance_columns = [
-            ("clearance_conducted_at",    "DATETIME"),
+            ("clearance_conducted_at",    "TIMESTAMP"),
             ("clearance_agent_id",        "INTEGER"),
             ("agent_document_type",        "VARCHAR"),
             ("agent_document_number",      "VARCHAR"),
             ("clearance_notes",            "TEXT"),
-            ("video_session_started_at",   "DATETIME"),  # v3.1 Jitsi session tracking
+            ("video_session_started_at",   "TIMESTAMP"),  # v3.1 Jitsi session tracking
         ]
         for col, coltype in clearance_columns:
             if col not in claims_cols:
@@ -71,7 +71,7 @@ try:
             ("effective_coverage_amount", "INTEGER"),
             ("payout_rule",              "VARCHAR"),
             ("payout_amount",            "INTEGER"),
-            ("is_totaled",               "BOOLEAN DEFAULT 0"),
+            ("is_totaled",               "BOOLEAN DEFAULT FALSE"),
         ]
         for col, coltype in payout_columns:
             if col not in claims_cols:
@@ -81,7 +81,7 @@ try:
 
         # v3 Phase 4 — AI generation detection columns (forensic_analyses)
         ai_gen_columns = [
-            ("ai_generated_detected",    "BOOLEAN DEFAULT 0"),
+            ("ai_generated_detected",    "BOOLEAN DEFAULT FALSE"),
             ("ai_generation_confidence", "FLOAT"),
             ("ai_generation_indicators", "JSON"),
         ]
